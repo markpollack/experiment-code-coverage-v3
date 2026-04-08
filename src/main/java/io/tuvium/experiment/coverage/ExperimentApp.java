@@ -245,7 +245,7 @@ public class ExperimentApp {
 					"-Dspring-javaformat.skip=true"))
 			.tierPolicy(0, TierPolicy.REJECT_ON_ANY_FAIL)
 			.addJudge(1, new CoverageImprovementJudge(50.0, 85.0))
-			.tierPolicy(1, TierPolicy.ACCEPT_ON_ALL_PASS)
+			.tierPolicy(1, TierPolicy.REJECT_ON_ANY_FAIL)
 			.addJudge(2, new TestQualityJudge(
 					TestQualityJudge.defaultAgentClientFactory("claude-sonnet-4-6", Duration.ofMinutes(3)),
 					judgePromptPath))
