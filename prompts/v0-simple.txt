@@ -1,0 +1,6 @@
+Add JUnit tests to improve code coverage for this Spring Boot project. There are some existing tests but coverage is incomplete. Target at least 85% line coverage.
+
+## Done When
+Run `./mvnw clean test jacoco:report` and check `target/site/jacoco/index.html`. You are done when:
+- All tests pass (zero failures, zero errors)
+- Line coverage reported by JaCoCo is >= 85%

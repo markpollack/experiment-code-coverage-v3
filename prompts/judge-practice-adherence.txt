@@ -1,0 +1,125 @@
+You are evaluating the practice adherence of a JUnit test suite for a Spring Boot project. You assess whether the tests follow prescribed Spring testing practices — not whether they pass or achieve coverage targets (those are measured separately by deterministic judges).
+
+First, read pom.xml to determine the Spring Boot version (Boot 3.x vs 4.x) from the parent.
+Then navigate src/main/ to understand the production code architecture (controllers, services, repositories, domain objects).
+Then navigate src/test/ to evaluate the test suite.
+
+Score the test suite on these criteria (0.0–1.0 each, equal weight):
+
+1. TEST SLICE SELECTION
+   Does each test class use the narrowest Spring test slice that covers its test objective?
+
+   0.2: Uses @SpringBootTest for everything, including controller-only or repository-only tests.
+   0.5: Uses some slices (@WebMvcTest, @DataJpaTest) but defaults to @SpringBootTest where a slice would suffice. Service-layer tests load a Spring context unnecessarily.
+   0.8: Consistently uses the appropriate slice — @WebMvcTest for controllers, @DataJpaTest for repositories, @WebFluxTest for reactive controllers, plain JUnit+Mockito for services with no Spring dependencies. @SpringBootTest used only for genuine cross-cutting integration tests.
+   1.0: Perfect slice selection with scoped annotations (e.g., @WebMvcTest(SpecificController.class)) and no unnecessary context loading.
+
+2. ASSERTION QUALITY
+   Do assertions verify domain-meaningful values and observable behavior, or just exercise lines?
+
+   0.2: Tests have no assertions or only trivial assertions (assertNotNull, assertTrue(true)). Tests construct objects without verifying behavior. Mocks are verified for internal call sequences rather than observable outcomes.
+   0.5: Assertions exist but are shallow — checking existence (isNotNull, isNotEmpty) rather than specific values. Some verify(mock) calls where HTTP status or response body assertions would be more appropriate.
+   0.8: Assertions check specific domain values (assertEquals on content, jsonPath on response fields, assertThat with extracting for collections). Uses AssertJ fluent assertions. BDDMockito (given/willReturn/then) preferred over classic Mockito (when/thenReturn/verify). Verification limited to observable side effects (emails sent, events published), not internal delegation.
+   1.0: Rich behavioral assertions throughout — AssertJ extracting/filteredOn for collections, assertThatThrownBy for exceptions with message checks, jsonPath for structured response validation, ArgumentCaptor for verifying side-effect payloads. No implementation-coupling verification.
+
+3. ERROR AND EDGE CASE COVERAGE
+   Does the test suite cover error handling paths, validation, and boundary conditions — not just the happy path?
+
+   0.2: Only happy-path tests. No tests for error responses, exception handlers, or invalid input.
+   0.5: Some error paths tested but inconsistently — e.g., tests for 404 but not for validation errors (400), or tests for service exceptions but not for the controller's exception handler mapping.
+   0.8: Error handlers (@ExceptionHandler, @RestControllerAdvice) tested with expected status codes. Validation tested with invalid input. Both branches of conditional logic covered. Unauthenticated (401) and forbidden (403) paths tested where security is present.
+   1.0: Comprehensive negative testing — all exception handlers, validation constraints, boundary values, null/empty inputs, conditional branches. Security tests include unauthenticated, wrong-role, and CSRF scenarios where applicable.
+
+4. DOMAIN-SPECIFIC TEST PATTERNS
+   Does the test suite use the correct testing infrastructure for the domain being tested?
+
+   For @DataJpaTest classes — you MUST check all of the following:
+   - grep for "flush()" and "clear()" in test files. If a @DataJpaTest class calls save() then findById() WITHOUT flush()+clear() in between, score 0.3 max for this criterion.
+   - Tests that re-read after save without flush()+clear() are reading from Hibernate L1 cache, not the database. This is a false-positive trap.
+   - Uses TestEntityManager (not the repository under test) for test data setup
+   - Tests custom @Query methods and @Modifying queries, not just inherited CRUD
+
+   For @WebMvcTest classes:
+   - Verify proper @MockitoBean setup for service dependencies
+   - Includes contentType on POST/PUT requests
+   - Scopes @WebMvcTest to specific controller
+
+   For validator/unit tests:
+   - Verify both valid and invalid inputs are tested
+   - Error codes checked (not just error existence)
+
+   If a domain is not present in the production code (e.g., no WebFlux controllers, no security configuration), mark that domain as "N/A" in the evidence and score based only on domains that are present.
+
+   0.2: Wrong infrastructure — e.g., no flush/clear for JPA reads, @SpringBootTest where slice would work.
+   0.3: JPA tests re-read after save without flush()+clear() — L1 cache false positives. Or validator tests check error existence but not error codes.
+   0.5: Mostly correct infrastructure but missing key practices — e.g., JPA tests use the repository under test for setup.
+   0.8: Correct infrastructure for each domain with proper practices (flush+clear before re-read, TestEntityManager for setup, error codes verified). Minor gaps.
+   1.0: Textbook usage of domain-specific patterns with all best practices followed.
+
+5. COVERAGE TARGET SELECTION
+   Does the test suite focus on code with behavioral significance, or does it waste effort on compiler-generated and framework code?
+
+   0.2: Tests records (constructors, accessors, equals/hashCode), Application.main(), @Configuration classes, or trivial getters/setters. Coverage is inflated by testing framework plumbing.
+   0.5: Some low-value tests (records, main method) alongside meaningful tests. Tests inherited Spring Data CRUD methods (save/findById) rather than custom queries.
+   0.8: Focuses on meaningful code — custom business logic, error handling, conditional branches, controller endpoints, custom queries. Skips records, main(), generated code, and framework configuration. Does not test Spring Data plumbing.
+   1.0: Every test targets behaviorally significant code. Uncovered code is intentionally excluded (records, config, generated). Coverage improvements come from testing error paths, branches, and validation — not from exercising compiler output.
+
+6. VERSION-AWARE PATTERNS
+   Does the test suite use annotations and APIs appropriate for the project's Spring Boot version?
+
+   You MUST check the actual code — do not reason about it abstractly:
+   - Read pom.xml to determine Boot version from spring-boot-starter-parent
+   - grep for "MockMvcTester" across all test files — count occurrences
+   - grep for "MockMvc.perform" or "mockMvc.perform" across all test files — count occurrences
+   - grep for "@MockitoBean" vs "@MockBean" across all test files — count occurrences
+   - Report the grep counts in your evidence
+
+   For Boot 4.x projects:
+   - Uses @MockitoBean (not deprecated @MockBean)
+   - Uses @MockitoSpyBean (not deprecated @SpyBean)
+   - Uses Boot 4.x import paths (e.g., o.s.boot.webmvc.test.autoconfigure.WebMvcTest)
+   - MVC tests MUST use MockMvcTester (preferred Boot 4 API, AssertJ-based) — NOT legacy MockMvc.perform()
+   - MockMvcTester pattern: @Autowired MockMvcTester mvc; assertThat(mvc.get().uri("/path")).hasStatusOk()
+   - If Boot 4+ and tests use MockMvc.perform() instead of MockMvcTester: score 0.3 max
+
+   For Boot 3.x projects:
+   - Uses @MockBean/@SpyBean (correct for Boot 3.x)
+   - Uses MockMvc (MockMvcTester not available)
+   - Uses jakarta.* imports (not javax.*)
+
+   0.2: Uses annotations from the wrong Boot version — e.g., @MockBean on a Boot 4 project.
+   0.3: Boot 4+ project but ALL controller tests use legacy MockMvc.perform() instead of MockMvcTester. Annotations correct but API is outdated.
+   0.5: Mixes MockMvcTester and MockMvc.perform() in the same project, or mixes @MockBean/@MockitoBean.
+   0.8: Consistently uses MockMvcTester on Boot 4+, or MockMvc on Boot 3.x. All annotations match version.
+   1.0: Perfect — MockMvcTester with AssertJ assertions throughout on Boot 4+, all annotations current.
+
+You MUST score ALL 6 criteria. Do not skip any criterion. Do not combine criteria.
+
+Before scoring, you MUST run these checks and report results in evidence:
+- grep for "MockMvcTester" across all test files — report count
+- grep for "mockMvc.perform" or "MockMvc.perform" across all test files — report count
+- grep for "flush()" and "clear()" in @DataJpaTest test files — report count
+- grep for "@MockitoBean" vs "@MockBean" across all test files — report count
+
+Output exactly this JSON structure with ALL 6 entries:
+{
+  "boot_version": "3.x or 4.x",
+  "criteria": [
+    { "name": "test_slice_selection", "score": 0.0, "evidence": "specific code reference" },
+    { "name": "assertion_quality", "score": 0.0, "evidence": "specific code reference" },
+    { "name": "error_and_edge_case_coverage", "score": 0.0, "evidence": "specific code reference" },
+    { "name": "domain_specific_test_patterns", "score": 0.0, "evidence": "specific code reference" },
+    { "name": "coverage_target_selection", "score": 0.0, "evidence": "specific code reference" },
+    { "name": "version_aware_patterns", "score": 0.0, "evidence": "specific code reference" }
+  ]
+}
+
+Important:
+- You MUST output exactly 6 criteria entries. If you output fewer than 6, your evaluation is invalid.
+- If src/test/ contains no test classes, return all scores as 0.0 with evidence "no test classes found" for each criterion.
+- Evidence must reference specific files and code patterns you observed (e.g., "src/test/java/com/example/GreetingControllerTest.java uses @SpringBootTest instead of @WebMvcTest").
+- Evidence may reference multiple files — separate with semicolons (e.g., "GreetingControllerTest.java uses @WebMvcTest correctly; OrderRepositoryTest.java uses @SpringBootTest instead of @DataJpaTest").
+- Score based on what you observe in the test suite, not on what is absent from the production code.
+- If no tests exist for a domain (e.g., no security tests because there is no security), do not penalize — score based on the tests that do exist.
+- If very few tests exist, score based on the quality of what is present, noting the limited sample in evidence.
+- The grep counts for MockMvcTester, flush/clear, and @MockitoBean/@MockBean MUST appear in the evidence for criteria 4 and 6.

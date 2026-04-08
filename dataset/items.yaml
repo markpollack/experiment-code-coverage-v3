@@ -1,0 +1,7 @@
+items:
+  - id: "petclinic-partial"
+    slug: "spring-petclinic-partial"
+    task: "Add JUnit tests to improve code coverage to 85%+ line coverage"
+    source: "/home/mark/projects/spring-petclinic-partial"
+    subdirectory: "."
+    knowledgeRefs: []

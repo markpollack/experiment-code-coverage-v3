@@ -1,0 +1,12 @@
+experimentName: code-coverage-v3
+defaultModel: claude-sonnet-4-6
+timeoutMinutes: 20
+variants:
+  - name: simple
+    promptFile: v0-simple.txt
+    knowledgeDir: null
+    knowledgeFiles: []
+  - name: hardened-skills
+    promptFile: v1-hardened.txt
+    knowledgeDir: null
+    knowledgeFiles: []
