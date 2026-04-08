@@ -2,9 +2,5 @@
   "developerTask": "Add JUnit tests to improve code coverage to 85%+ line coverage",
   "noChange": false,
   "knowledgeRefs": [],
-  "tags": ["jpa", "web", "mvc", "thymeleaf", "data", "validation"],
-  "beforeRef": {
-    "repoPath": "/home/mark/projects/spring-petclinic-partial",
-    "commitHash": "e316074300de4761f7b100a21423525e8b8ecdc5"
-  }
+  "tags": ["jpa", "web", "mvc", "thymeleaf", "data", "validation"]
 }
