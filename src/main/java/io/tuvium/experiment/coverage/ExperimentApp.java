@@ -30,13 +30,13 @@ import io.github.markpollack.experiment.store.FileSystemSweepStore;
 import io.github.markpollack.experiment.store.ResultStore;
 import io.github.markpollack.experiment.store.RunSessionStatus;
 import io.github.markpollack.experiment.store.SessionStore;
-import io.github.markpollack.experiment.store.Sweep;
 import io.github.markpollack.experiment.store.SweepStatus;
 import io.github.markpollack.experiment.store.SweepStore;
-import io.github.markpollack.experiment.store.SweepVariantResolution;
+import io.tuvium.experiment.coverage.judge.TestQualityJudge;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springaicommunity.judge.coverage.CoverageImprovementJudge;
 import org.springaicommunity.judge.exec.BuildSuccessJudge;
 import org.springaicommunity.judge.jury.Jury;
 import org.springaicommunity.judge.jury.TierPolicy;
@@ -238,12 +238,18 @@ public class ExperimentApp {
 				List.copyOf(variants), new FileSystemDatasetManager());
 	}
 
-	static JuryFactory buildJuryFactory() {
+	static JuryFactory buildJuryFactory(Path projectRoot) {
+		Path judgePromptPath = projectRoot.resolve("prompts/judge-practice-adherence.txt");
 		return JuryFactory.builder()
-			.addJudge(0, BuildSuccessJudge.maven("clean", "test"))
+			.addJudge(0, BuildSuccessJudge.maven("clean", "test", "jacoco:report",
+					"-Dspring-javaformat.skip=true"))
 			.tierPolicy(0, TierPolicy.REJECT_ON_ANY_FAIL)
-			// TODO: Tier 1 — JaCoCo coverage judge (deterministic, score 0-1)
-			// TODO: Tier 2 — Practice adherence LLM judge (6-criteria)
+			.addJudge(1, new CoverageImprovementJudge(50.0, 85.0))
+			.tierPolicy(1, TierPolicy.ACCEPT_ON_ALL_PASS)
+			.addJudge(2, new TestQualityJudge(
+					TestQualityJudge.defaultAgentClientFactory("claude-sonnet-4-6", Duration.ofMinutes(3)),
+					judgePromptPath))
+			.tierPolicy(2, TierPolicy.FINAL_TIER)
 			.build();
 	}
 
@@ -283,7 +289,7 @@ public class ExperimentApp {
 		Path resultsDir = projectRoot.resolve("results");
 		ResultStore resultStore = new FileSystemResultStore(resultsDir);
 		SessionStore sessionStore = new FileSystemSessionStore(resultsDir);
-		JuryFactory juryFactory = buildJuryFactory();
+		JuryFactory juryFactory = buildJuryFactory(projectRoot);
 
 		SweepStore sweepStore = sweepName != null
 				? new FileSystemSweepStore(resultsDir, sessionStore) : null;

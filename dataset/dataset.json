@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "name": "coverage-v3",
+  "description": "Code coverage experiment v3 — skills, exemplars, and the partial knowledge paradox",
+  "version": "1.0.0",
+  "items": [
+    {
+      "id": "spring-petclinic-partial",
+      "slug": "spring-petclinic-partial",
+      "path": "items/spring-petclinic-partial",
+      "bucket": "A",
+      "taskType": "coverage-improvement",
+      "status": "active"
+    }
+  ]
+}
