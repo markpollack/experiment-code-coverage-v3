@@ -1,6 +1,6 @@
 experimentName: code-coverage-v3
 defaultModel: claude-sonnet-4-6
-timeoutMinutes: 20
+timeoutMinutes: 30
 variants:
   - name: simple
     promptFile: v0-simple.txt
