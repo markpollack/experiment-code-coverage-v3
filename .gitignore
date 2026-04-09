@@ -1,4 +1,5 @@
 results/
+analysis/
 .env
 .DS_Store
 target/
