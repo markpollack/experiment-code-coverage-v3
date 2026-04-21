@@ -6,3 +6,13 @@ target/
 *.class
 *.jar
 *.log
+
+# Python
+scripts/.venv/
+__pycache__/
+*.pyc
+
+# LaTeX build artifacts
+*.aux
+*.out
+*.toc
