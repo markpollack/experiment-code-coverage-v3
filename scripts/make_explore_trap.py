@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """The EXPLORE-trap figure: the honest control-measure visual for the ACT post.
 
-Shows the *mechanism* behind the -37%: the EXPLORE self-loop. Reducing how often
-the run falls back into EXPLORE (self-loop P, dwell, expected returns) is what lowers
-the Foster-Lyapunov value V(EXPLORE) = expected steps to done.
+Shows the *mechanism* behind the step reduction: the EXPLORE self-loop. Reducing how
+often the run falls back into EXPLORE (self-loop P, dwell, expected returns) is what
+lowers V(EXPLORE) = expected steps to done from the EXPLORE state.
 
 Reuses the project's own classifier + markov-agent-analysis absorbing-chain math, so
 every number is data-true and regenerable. Writes PNG+SVG to docs/figures/attention/.
@@ -82,18 +82,15 @@ def main():
     print(f"hardened: {h}")
     print(f"V drop  : {s['V']:.1f} -> {h['V']:.1f}  ({-pct:.0f}%)")
 
-    fig, ax = plt.subplots(figsize=(11, 7.2))
-    ax.set_xlim(0, 11); ax.set_ylim(0, 8); ax.axis("off")
-    ax.text(5.5, 7.80, "The EXPLORE trap", ha="center", va="top", fontsize=20, fontweight="bold", color=INK)
-    ax.text(5.5, 7.30, "Expected steps to done — the Foster–Lyapunov value of the run's start state, from a Markov model.\n"
-                       "Loosening the self-loop is what lowers it. Not a raw tool-call count.",
-            ha="center", va="top", fontsize=11, style="italic", color=MUTE)
+    fig, ax = plt.subplots(figsize=(11, 6.7))
+    ax.set_xlim(0, 11); ax.set_ylim(0, 7.5); ax.axis("off")
+    ax.text(5.5, 7.30, "The EXPLORE trap", ha="center", va="top", fontsize=20, fontweight="bold", color=INK)
     panel(ax, 3.0, s, GRAY, "simple")
     panel(ax, 8.0, h, TEAL, "hardened+skills")
     ax.add_patch(FancyArrowPatch((4.15, 1.05), (6.85, 1.05), arrowstyle="-|>",
                                  mutation_scale=16, color=TEAL, lw=2.2, connectionstyle="arc3,rad=-0.20"))
     ax.text(5.5, 1.92, f"−{pct:.0f}%", ha="center", va="center", fontsize=22, fontweight="bold", color=TEAL)
-    ax.text(5.5, 1.48, "expected work remaining", ha="center", va="center", fontsize=10, color=MUTE)
+    ax.text(5.5, 1.48, "in expected steps to done", ha="center", va="center", fontsize=10, color=MUTE)
 
     out = PROJ / "docs" / "figures" / "attention"
     out.mkdir(parents=True, exist_ok=True)
