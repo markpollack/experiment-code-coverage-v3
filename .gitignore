@@ -7,6 +7,10 @@ target/
 *.jar
 *.log
 
+# Private local files — not pushed to GitHub
+CLAUDE.md
+plans/
+
 # Python
 scripts/.venv/
 __pycache__/
