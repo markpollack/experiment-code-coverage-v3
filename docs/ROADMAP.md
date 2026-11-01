@@ -11,8 +11,9 @@ Subsequent development is paused.
 - Retained: two accepted integration observations, one per variant. Four further
   measurements are unfinished and held. Earlier failed derivatives and original
   acquisition/runtime provenance remain historical evidence.
-- Pending dependency closure: Journal's final normalized producer push and semantic
-  receipt; Experiment's full legacy reactor and publication-safe baseline; Client's
+- Completed: adopt Journal's final normalized producer push and semantic receipt;
+  exact final artifact hashes equal the dependencies tested by V3.
+- Pending upstream gates: Experiment's full legacy reactor and publication-safe baseline; Client's
   published-consumer policy and upstream SDK publication decisions. V3's passing
   tests do not close those owning gates.
 - Deferred: historical reader retirement, broader ingestion migration, new features,

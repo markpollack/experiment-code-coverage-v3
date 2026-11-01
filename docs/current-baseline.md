@@ -5,6 +5,10 @@ preserves accepted source and observations; it authorizes no new experiment run.
 The project itself holds its sanitized current-state record. There is no separate
 V3 steward repository.
 
+Implementation and normalization were pushed in
+`d5ad4d848889aedc2c72ee7fbd3a2fb5551f09f2`; the subsequent receipt update adopts
+the final Journal producer evidence without changing code, pins or tested bytes.
+
 ## Source disposition
 
 | Input | Disposition |
@@ -37,9 +41,11 @@ receipts. No dependency-version command-line overrides were used.
 | Workflow / Judge | released `0.14.0` / `0.18.0` | Existing selected releases |
 | Jackson BOMs | `2.22.4` / `3.2.4` | Existing declared defaults |
 
-Journal's normalized artifact hashes and full-reactor/packaged acceptance were
-available during verification; its final source push and semantic receipt remain
-pending at this checkpoint. Experiment's runtime passes its owning tests, but its
+Journal's final source main above and owning receipt at steward main
+`32f956494092cafbbe0bab163f82756f4b0a379b` are remotely verified and adopted.
+The final artifact hashes equal the ones already tested by V3. Journal's owning
+full-reactor, packaged acceptance and eleven semantic controls passed; V3 did not
+rerun the upstream suite. Experiment's runtime passes its owning tests, but its
 full legacy reactor is blocked on Judge/JEV compatibility. SDK, Client and
 Experiment main pushes are held by their automatic publication workflows; their
 existing task branches remain their owning source lines. Client also retains an
@@ -81,6 +87,6 @@ Accepted observations remain **one simple plus one hardened** with differing
 original runtimes. Four repeats remain unfinished and held. No homogeneous-runtime,
 causal, statistical, efficiency or broader provider qualification follows.
 
-Next action: verify Journal's final exact producer receipt without relabeling old
-artifacts, and have the respective owners resolve upstream publication/full-reactor
-gates before a separately authorized next phase. See the [paused roadmap](ROADMAP.md).
+No V3 consolidation blocker remains. Next action: have the respective owners
+resolve upstream publication/full-reactor/policy gates before a separately
+authorized next phase. See the [paused roadmap](ROADMAP.md).
