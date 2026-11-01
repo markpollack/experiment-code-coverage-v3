@@ -24,10 +24,13 @@ public final class TestQualityJudge implements Judge {
             }
             String rubric=Files.readString(prompt);
             Files.writeString(evidence.resolve("prompt.txt"),rubric,StandardOpenOption.CREATE_NEW);
+            var options=ClaudeAgentOptions.builder().model("claude-sonnet-4-6")
+                    .allowedTools(List.of("Read","Glob","Grep")).yolo(false).timeout(Duration.ofMinutes(3)).build();
             try(var model=ClaudeAgentModel.builder().workingDirectory(workspace).timeout(Duration.ofMinutes(3))
                     .capture(new ClaudeCaptureOptions(evidence.resolve("acquired"),"quality-"+UUID.randomUUID(),"2.1.316"))
-                    .defaultOptions(ClaudeAgentOptions.builder().model("claude-sonnet-4-6").allowedTools(List.of("Read","Glob","Grep")).yolo(false).timeout(Duration.ofMinutes(3)).build()).build()) {
-                var response=AgentClient.create(model).goal(rubric).workingDirectory(workspace).run();
+                    .defaultOptions(options).build()) {
+                // Pass provider options through the facade as well: portable defaults otherwise override yolo(false).
+                var response=AgentClient.builder(model).defaultOptions(options).build().goal(rubric).workingDirectory(workspace).run();
                 String text=Objects.toString(response.getResult(),"");
                 Files.writeString(evidence.resolve("response.txt"),text,StandardOpenOption.CREATE_NEW);
                 if(!response.isSuccessful()) return Judgment.error("Quality agent did not complete successfully");
