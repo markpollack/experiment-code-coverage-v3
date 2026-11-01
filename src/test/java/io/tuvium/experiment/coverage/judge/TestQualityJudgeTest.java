@@ -3,10 +3,33 @@ package io.tuvium.experiment.coverage.judge;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import java.nio.file.*;
 import static org.assertj.core.api.Assertions.*;
 import io.github.markpollack.judge.judgment.JudgmentStatus;
 
 class TestQualityJudgeTest {
+    @TempDir Path temp;
+    @Test void emptySuiteRetainsExactSixZeroChecksWithoutCallingProvider() throws Exception {
+        Path workspace=temp.resolve("empty");Files.createDirectories(workspace.resolve("src/test"));
+        Files.createDirectory(workspace.resolve("src/test/NotAClass.java"));
+        var result=new TestQualityJudge(workspace,temp.resolve("missing-rubric"),temp.resolve("evidence")).judge();
+        assertThat(result.status()).isEqualTo(JudgmentStatus.FAIL);
+        assertThat(result.score()).isZero();assertThat(result.checks()).hasSize(6);
+        assertThat(result.checks()).extracting(c->c.id()).containsExactlyElementsOf(TestQualityJudge.CRITERIA);
+        for(var check:result.checks()) {
+            assertThat(check.judgment().status()).isEqualTo(JudgmentStatus.FAIL);
+            assertThat(check.judgment().score()).isZero();
+            assertThat(check.judgment().reasoning()).isEqualTo("no test classes found");
+        }
+        assertThat(Files.exists(temp.resolve("evidence/acquired"))).isFalse();
+    }
+    @Test void unavailableTestDirectoryIsAnInstrumentError() throws Exception {
+        Path workspace=temp.resolve("missing");Files.createDirectory(workspace);
+        var result=new TestQualityJudge(workspace,temp.resolve("rubric"),temp.resolve("error-evidence")).judge();
+        assertThat(result.status()).isEqualTo(JudgmentStatus.ERROR);
+        assertThat(result.checks()).isEmpty();
+    }
     ObjectNode rubric(double score) {
         var root=new ObjectMapper().createObjectNode().put("boot_version","4.x"); var list=root.putArray("criteria");
         for(String name:TestQualityJudge.CRITERIA) list.addObject().put("name",name).put("score",score).put("evidence","Fixture.java observed pattern; counts=1");

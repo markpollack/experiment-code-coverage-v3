@@ -13,6 +13,47 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def selected_jury(row, result_path, evidence):
+    """Keep producer bytes and bind every judgment to this immutable assessment revision."""
+    documents = row["verdicts"]
+    if len(documents) != (1 if row["judgeState"] == "RETURNED" else 0):
+        raise ValueError("Final Jury envelope cardinality mismatch")
+    if not documents:
+        return None, {}, []
+    document = documents[0]
+    if hashlib.sha256(document["producerJson"].encode("utf-8")).hexdigest() != document["sha256"]:
+        raise ValueError("Final Jury producer hash mismatch")
+    verdict = json.loads(document["producerJson"])
+    if verdict.get("schemaVersion") != 6:
+        raise ValueError("Expected full V6 Jury envelope")
+    named = {}
+
+    def collect(node):
+        for name, judgment in node.get("individualByName", {}).items():
+            if name in named and named[name] != judgment:
+                raise ValueError("Conflicting named judgment in selected Jury")
+            named[name] = judgment
+        for attempt in node.get("compositeAttempts", []):
+            if isinstance(attempt.get("verdict"), dict):
+                collect(attempt["verdict"])
+
+    collect(verdict)
+    quality_path = evidence / "judges/quality/acquired/acquisition.json"
+    quality = None
+    if quality_path.exists():
+        acquired = json.loads(quality_path.read_text())
+        quality = {"path": str(quality_path), "sha256": sha(quality_path),
+                   "invocation_id": acquired["acquisition_uid"]}
+    association = {"assessment_identity": row["identity"],
+                   "task_invocation_id": row["invocations"][0]["attempt"]["invocationId"],
+                   "assessment_revision_path": str(result_path), "assessment_revision_sha256": sha(result_path),
+                   "judge_evidence_root": str(evidence), "quality_acquisition": quality}
+    final = {"judge_name": "final_jury", "status": document["conclusion"],
+             "producer_document": document, "source_path": str(result_path),
+             "source_sha256": sha(result_path), **association}
+    return association, named, [final]
+
+
 def mapping(result_path, export, reader_receipt, evidence, expected_tool_calls):
     result = json.loads(result_path.read_text())
     if result.get("recordingSchemaVersion") != 4 or result.get("kind") != "AGENT_CANONICAL":
@@ -39,17 +80,21 @@ def mapping(result_path, export, reader_receipt, evidence, expected_tool_calls):
         if sha(Path(ref["path"])) != ref["sha256"]:
             raise ValueError("Changed independently checked source/canonical artifact")
     observed = {}
-    details = []
+    association, selected, details = selected_jury(row, result_path, evidence)
     for name in ("t0_build", "t1_coverage", "t2_quality"):
         path = evidence / "judges" / f"{name}.json"
         if not path.exists():
             continue
         judgment = json.loads(path.read_text())
+        if selected.get(name) != judgment:
+            raise ValueError("Individual judgment differs from selected Jury revision: " + name)
         status = judgment["producerStatus"].upper()
         numeric = (judgment.get("finding") or {}).get("numeric") or {}
         observed[name] = {"status": status, "score": numeric.get("value")}
         details.append({"judge_name": name, "status": status, "judgment": judgment,
-                        "source_path": str(path), "source_sha256": sha(path)})
+                        "source_path": str(path), "source_sha256": sha(path), **association})
+    if set(selected) & {"t0_build", "t1_coverage", "t2_quality"} != set(observed):
+        raise ValueError("Selected Jury is missing its individual judgment artifacts")
     states = [j["status"] for j in observed.values()]
     if "ERROR" in states or row["judgeState"] != "RETURNED":
         outcome, passed = "INSTRUMENT_ERROR", None

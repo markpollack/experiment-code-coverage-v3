@@ -20,7 +20,7 @@ public final class TestQualityJudge implements Judge {
         try {
             Files.createDirectories(evidence);
             try(var files=Files.walk(workspace.resolve("src/test"))) {
-                if(files.noneMatch(p->p.toString().endsWith(".java"))) return Judgment.fail("No test classes found in src/test/");
+                if(files.noneMatch(p->Files.isRegularFile(p)&&p.toString().endsWith(".java"))) return emptySuite();
             }
             String rubric=Files.readString(prompt);
             Files.writeString(evidence.resolve("prompt.txt"),rubric,StandardOpenOption.CREATE_NEW);
@@ -37,6 +37,12 @@ public final class TestQualityJudge implements Judge {
                 return parseJudgment(text);
             }
         } catch(Exception e) {return Judgment.error("Quality instrument failure: " + e);}
+    }
+    private static Judgment emptySuite() {
+        var checks=CRITERIA.stream().map(name->new Check(name,
+                Judgment.builder().fail().score(0.0).reasoning("no test classes found").build())).toList();
+        return Judgment.builder().fail().score(0.0).reasoning("no test classes found").checks(checks)
+                .metadata("criteria_count",6).metadata("convergence_met",false).build();
     }
     public static Judgment parseJudgment(String text) {
         try {
