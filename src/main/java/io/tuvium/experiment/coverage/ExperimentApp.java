@@ -73,7 +73,7 @@ public final class ExperimentApp {
             }
         }
         Row row=WorkflowAdapter.assess(execution,prepared,invocations,domain,(item,measured)->JuryFactory.create(item,measured,project.resolve("prompts/judge-practice-adherence.txt"),evidence.resolve("judges")));
-        var result=new Result(3,"AGENT_CANONICAL",run,(String)config.get("experimentName"),System.currentTimeMillis(),List.of(row),provenance);
+        var result=new Result(AgentRecords.CURRENT_SCHEMA_VERSION,"AGENT_CANONICAL",run,(String)config.get("experimentName"),System.currentTimeMillis(),List.of(row),provenance);
         var store=new FileSystemResultStore(evidence.resolve("results")); store.save(result);
         if(!store.load(run).orElseThrow().equals(result)) throw new IllegalStateException("Result round trip differs");
         Evidence.verify(row);

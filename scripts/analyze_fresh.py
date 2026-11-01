@@ -15,7 +15,7 @@ def sha(path):
 
 def mapping(result_path, export, reader_receipt, evidence, expected_tool_calls):
     result = json.loads(result_path.read_text())
-    if result.get("recordingSchemaVersion") != 3 or result.get("kind") != "AGENT_CANONICAL":
+    if result.get("recordingSchemaVersion") != 4 or result.get("kind") != "AGENT_CANONICAL":
         raise ValueError("Expected current Experiment canonical result")
     if len(result["items"]) != 1:
         raise ValueError("The bounded V3 path expects one item")

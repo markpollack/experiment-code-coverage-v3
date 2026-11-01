@@ -9,7 +9,7 @@
     <dependency><groupId>tools.jackson</groupId><artifactId>jackson-bom</artifactId><version>3.2.4</version><type>pom</type><scope>import</scope></dependency>
   </dependencies></dependencyManagement>
   <dependencies>
-    <dependency><groupId>io.github.markpollack</groupId><artifactId>experiment-runtime</artifactId><version>0.10.0-fresh-v3-SNAPSHOT</version></dependency>
+    <dependency><groupId>io.github.markpollack</groupId><artifactId>experiment-runtime</artifactId><version>0.10.0-fresh-v3-qualification-SNAPSHOT</version></dependency>
     <dependency><groupId>io.github.markpollack</groupId><artifactId>agent-judge-exec</artifactId><version>0.18.0</version></dependency>
     <dependency><groupId>org.yaml</groupId><artifactId>snakeyaml</artifactId><version>2.7</version></dependency>
     <dependency><groupId>org.jspecify</groupId><artifactId>jspecify</artifactId><version>1.0.1</version></dependency>

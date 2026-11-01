@@ -14,7 +14,7 @@ class MappingTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             result = root / 'result.json'
-            result.write_text(json.dumps({'recordingSchemaVersion': 3, 'kind': 'AGENT_CANONICAL',
+            result.write_text(json.dumps({'recordingSchemaVersion': 4, 'kind': 'AGENT_CANONICAL',
                 'experimentId': 'run', 'items': [{'identity': {'runId': 'run'},
                 'invocations': [{'attempt': {'row': {'runId': 'other'}}}]}]}))
             with self.assertRaisesRegex(ValueError, 'association'):
@@ -25,7 +25,7 @@ class MappingTest(unittest.TestCase):
             root = Path(directory)
             result = root / 'result.json'
             identity = {'runId': 'run'}
-            result.write_text(json.dumps({'recordingSchemaVersion': 3, 'kind': 'AGENT_CANONICAL',
+            result.write_text(json.dumps({'recordingSchemaVersion': 4, 'kind': 'AGENT_CANONICAL',
                 'experimentId': 'run', 'items': [{'identity': identity,
                 'invocations': [{'attempt': {'row': identity, 'invocationId': 'invoke'}}]}]}))
             receipt = root / 'receipt.json'

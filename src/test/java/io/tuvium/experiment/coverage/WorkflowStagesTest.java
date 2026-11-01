@@ -45,7 +45,7 @@ class WorkflowStagesTest {
         assertThat(measured.invoked().outcome().invocation().captureState()).isEqualTo("MISSING");
         assertThat(Files.readString(temp.resolve("expanded-prompt.txt"))).contains("Line coverage: 50.0%");
         var row=WorkflowAdapter.assess(execution,measured.invoked().prepared().item(),List.of(measured.invoked().outcome().invocation()),measured.domain(),(p,d)->()->Verdict.single("fixture",Judgment.fail("fixture no improvement")));
-        var result=new Result(3,"AGENT_CANONICAL",identity.runId(),"fixture",1,List.of(row),List.of());
+        var result=new Result(AgentRecords.CURRENT_SCHEMA_VERSION,"AGENT_CANONICAL",identity.runId(),"fixture",1,List.of(row),List.of());
         var store=new FileSystemResultStore(temp.resolve("results"));store.save(result);
         assertThat(new FileSystemResultStore(temp.resolve("results")).load(identity.runId())).contains(result);
         assertThat(row.verdicts().getFirst().conclusion()).isEqualTo("FAIL");Evidence.verify(row);
