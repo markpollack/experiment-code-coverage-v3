@@ -1,7 +1,11 @@
-# V3 consolidated baseline — 2026-11-01
+# V3 frozen tested baseline — 2026-11-01
 
-**Main is the sole development line. Later work is paused.** This consolidation
-preserves accepted source and observations; it authorizes no new experiment run.
+**This is the completed consolidation record and its frozen tested closure.**
+Read the [current housekeeping disposition](house-in-order.md) for subsequent
+cleanup and upstream readiness. Main remains the sole development line.
+
+This consolidation preserves accepted source and observations; it authorizes no
+new experiment run.
 The project itself holds its sanitized current-state record. There is no separate
 V3 steward repository.
 
@@ -21,12 +25,14 @@ the final Journal producer evidence without changing code, pins or tested bytes.
 
 The task input contains twelve commits after original local main, thirteen after
 prior remote main. No divergent source commits, stashes or unexplained unique
-branches were found. Both existing worktrees are retained: the main checkout has
-15 untracked attention figures and historical artifacts; the task checkout has
-ignored build artifacts. No worktree or branch was deleted. Main retains version
+branches were found. At consolidation, both existing worktrees were retained:
+the main checkout had 15 untracked attention figures and historical artifacts;
+the task checkout had ignored build artifacts. No worktree or branch was deleted
+during consolidation. The later housekeeping disposition records secondary-checkout
+retirement. Main retains version
 `0.1.0-SNAPSHOT`; no release, tag, deployment or license edit occurred here.
 
-## Current declared dependency closure
+## Dependency closure tested during consolidation
 
 All artifacts below are local builds with verified producer receipts, not newly
 published coordinates. Build with an isolated Maven cache populated from those
@@ -45,8 +51,11 @@ Journal's final source main above and owning receipt at steward main
 `32f956494092cafbbe0bab163f82756f4b0a379b` are remotely verified and adopted.
 The final artifact hashes equal the ones already tested by V3. Journal's owning
 full-reactor, packaged acceptance and eleven semantic controls passed; V3 did not
-rerun the upstream suite. Experiment's runtime passes its owning tests, but its
-full legacy reactor is blocked on Judge/JEV compatibility. SDK, Client and
+rerun the upstream suite.
+
+The following upstream gate observations are historical to consolidation; use
+the current disposition for later readiness. Experiment's runtime passed its
+owning tests, but its full legacy reactor was blocked on Judge/JEV compatibility. SDK, Client and
 Experiment main pushes are held by their automatic publication workflows; their
 existing task branches remain their owning source lines. Client also retains an
 unwaived published-consumer policy gate. None of these is a whole-library readiness
@@ -89,4 +98,4 @@ causal, statistical, efficiency or broader provider qualification follows.
 
 No V3 consolidation blocker remains. Next action: have the respective owners
 resolve upstream publication/full-reactor/policy gates before a separately
-authorized next phase. See the [paused roadmap](ROADMAP.md).
+authorized next phase. See the [current roadmap](ROADMAP.md).
