@@ -12,8 +12,8 @@ public final class JournalAssembly {
         return new AcquisitionAssembly((original, directory) -> {
             var qualified=ClaudeAcquisition.qualify(original,directory);
             return new AcquisitionAssembly.QualifiedPaths(qualified.manifest(),qualified.assemblyExpectation());
-        },"journal-capture-tck:2.0.0-fresh-v3-pilot-SNAPSHOT",
+        },"journal-capture-tck:2.0.0-fresh-v3-sidecar3-SNAPSHOT",
                 (manifest, output) -> FinalAssembly.assemble(manifest,output).name(),
-                "journal-ocsf-writer:2.0.0-fresh-v3-pilot-SNAPSHOT");
+                "journal-ocsf-writer:2.0.0-fresh-v3-sidecar3-SNAPSHOT");
     }
 }
