@@ -55,7 +55,7 @@ public final class ExperimentApp {
                 "providerPolicy","remaining item deadline minus 300000ms final measurement and 30000ms drain; no implicit retry",
                 "judgeBudgets","T0 10 minutes; T2 3 minutes, separate from invocation","inputs",provenance,"javaVersion",System.getProperty("java.version"),"startedAt",Instant.now().toString()));
         var task=new Task(identity,ws.toString(),Files.readString(project.resolve("prompts").resolve((String)selected.get("promptFile"))),model,evidence.toString());
-        var service=new ClaudeInvocationService("2.1.316",Path.of(System.getProperty("user.home"),".claude/projects"),Duration.ofSeconds(15),AcquisitionAssembly.journal());
+        var service=new ClaudeInvocationService("2.1.316",Path.of(System.getProperty("user.home"),".claude/projects"),Duration.ofSeconds(15),JournalAssembly.create());
         var prepare=new Prepare(); var invoke=new Invoke(service); var measure=new Measure();
         var graph=Workflows.define("coverage-v3").maxDuration(Duration.ofMinutes(minutes)).then("prepare-baseline",prepare).then("invoke-agent",invoke).then("measure-final",measure).terminate(WorkflowModel.Terminal.SUCCEEDED).build();
         var registry=StepRegistry.builder().register("coverage-prepare-v1",prepare).register("coverage-invoke-v1",invoke).register("coverage-measure-v1",measure).build();
