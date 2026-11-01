@@ -96,11 +96,12 @@ def mapping(result_path, export, reader_receipt, evidence, expected_tool_calls):
     if set(selected) & {"t0_build", "t1_coverage", "t2_quality"} != set(observed):
         raise ValueError("Selected Jury is missing its individual judgment artifacts")
     states = [j["status"] for j in observed.values()]
+    conclusion = row["verdicts"][0]["conclusion"] if row["verdicts"] else None
     if "ERROR" in states or row["judgeState"] != "RETURNED":
         outcome, passed = "INSTRUMENT_ERROR", None
-    elif "FAIL" in states:
+    elif "FAIL" in states or conclusion == "FAIL":
         outcome, passed = "FAIL", False
-    elif len(states) == 3 and all(s == "PASS" for s in states):
+    elif conclusion == "PASS" and len(states) == 3 and all(s == "PASS" for s in states):
         outcome, passed = "PASS", True
     else:
         outcome, passed = "NOT_EVALUATED", None

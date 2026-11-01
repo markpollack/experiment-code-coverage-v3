@@ -97,6 +97,22 @@ class MappingTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'producer hash'):
                 module.mapping(result, export, receipt, evidence, 1)
 
+    def test_final_jury_failure_is_not_replaced_by_individual_passes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result, export, receipt, evidence, document = self.selected_fixture(Path(directory))
+            data = json.loads(result.read_text())
+            final = data['items'][0]['verdicts'][0]
+            producer = json.loads(final['producerJson'])
+            producer['judgment'] = {'schemaVersion': 6, 'producerStatus': 'fail',
+                                   'reasoning': 'Final Jury policy finding'}
+            final['producerJson'] = json.dumps(producer)
+            final['sha256'] = module.hashlib.sha256(final['producerJson'].encode()).hexdigest()
+            final['conclusion'] = 'FAIL'
+            result.write_text(json.dumps(data))
+            domain = module.mapping(result, export, receipt, evidence, 1)['inputs'][0]['domain']
+            self.assertEqual('FAIL', domain['outcome'])
+            self.assertFalse(domain['passed'])
+
 
 if __name__ == '__main__':
     unittest.main()
