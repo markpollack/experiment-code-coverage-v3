@@ -25,6 +25,7 @@ public final class TestQualityJudge implements Judge {
             String rubric=Files.readString(prompt);
             Files.writeString(evidence.resolve("prompt.txt"),rubric,StandardOpenOption.CREATE_NEW);
             try(var model=ClaudeAgentModel.builder().workingDirectory(workspace).timeout(Duration.ofMinutes(3))
+                    .capture(new ClaudeCaptureOptions(evidence.resolve("acquired"),"quality-"+UUID.randomUUID(),"2.1.316"))
                     .defaultOptions(ClaudeAgentOptions.builder().model("claude-sonnet-4-6").allowedTools(List.of("Read","Glob","Grep")).yolo(false).timeout(Duration.ofMinutes(3)).build()).build()) {
                 var response=AgentClient.create(model).goal(rubric).workingDirectory(workspace).run();
                 String text=Objects.toString(response.getResult(),"");
@@ -43,7 +44,7 @@ public final class TestQualityJudge implements Judge {
             var criteria=root.get("criteria");
             if(criteria==null||!criteria.isArray()||criteria.size()!=6) throw new IllegalArgumentException("Exactly six criteria required");
             if(!root.path("boot_version").isTextual()||root.path("boot_version").asText().isBlank()) throw new IllegalArgumentException("Boot version required");
-            var seen=new HashSet<String>(); var checks=new ArrayList<Check>(); double total=0;
+            var seen=new HashSet<String>(); var checks=new ArrayList<Check>(); java.math.BigDecimal total=java.math.BigDecimal.ZERO;
             for(var c:criteria) {
                 String name=c.path("name").asText();
                 if(!CRITERIA.contains(name)||!seen.add(name)) throw new IllegalArgumentException("Unknown/duplicate criterion: " + name);
@@ -52,9 +53,9 @@ public final class TestQualityJudge implements Judge {
                 double score=scoreNode.doubleValue();
                 if(!Double.isFinite(score)||score<0||score>1) throw new IllegalArgumentException("Finite score in 0..1 required");
                 if(!c.path("evidence").isTextual()||c.path("evidence").asText().isBlank()) throw new IllegalArgumentException("Criterion evidence required");
-                checks.add(new Check(name,(score>=0.5?Judgment.builder().pass():Judgment.builder().fail()).score(score).reasoning(c.path("evidence").asText()).build())); total+=score;
+                checks.add(new Check(name,(score>=0.5?Judgment.builder().pass():Judgment.builder().fail()).score(score).reasoning(c.path("evidence").asText()).build())); total=total.add(java.math.BigDecimal.valueOf(score));
             }
-            double average=total/6;
+            double average=total.divide(java.math.BigDecimal.valueOf(6),java.math.MathContext.DECIMAL64).doubleValue();
             return (average>=0.5?Judgment.builder().pass():Judgment.builder().fail()).score(average).checks(checks)
                     .reasoning("Six-criterion practice adherence; executable threshold 0.5; convergence target 0.80")
                     .metadata("boot_version",root.path("boot_version").asText()).metadata("criteria_count",6)

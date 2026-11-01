@@ -15,6 +15,7 @@ class TestQualityJudgeTest {
     @Test void boundaryAndSeparateConvergence() {
         var pass=TestQualityJudge.parseJudgment(rubric(.5).toString());
         assertThat(pass.status()).isEqualTo(JudgmentStatus.PASS); assertThat(pass.score()).isEqualTo(.5);
+        assertThat(TestQualityJudge.parseJudgment(rubric(.8).toString()).metadata()).containsEntry("convergence_met",true);
         assertThat(pass.checks()).hasSize(6); assertThat(pass.metadata()).containsEntry("convergence_met",false);
         assertThat(TestQualityJudge.parseJudgment(rubric(.49).toString()).status()).isEqualTo(JudgmentStatus.FAIL);
     }

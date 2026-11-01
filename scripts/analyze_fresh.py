@@ -33,6 +33,8 @@ def mapping(result_path, export, reader_receipt, evidence, expected_tool_calls):
         raise ValueError("Independent reader did not accept this invocation")
     if receipt["export_sha256"] != sha(export):
         raise ValueError("Changed canonical export")
+    if not receipt["verified_files"]:
+        raise ValueError("Reader receipt lacks checked source/canonical hashes")
     for ref in receipt["verified_files"]:
         if sha(Path(ref["path"])) != ref["sha256"]:
             raise ValueError("Changed independently checked source/canonical artifact")
