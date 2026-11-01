@@ -13,7 +13,7 @@ import org.w3c.dom.Element;
 
 /** Domain evidence acquisition; failures never become a zero-percent measurement. */
 public final class CoverageEvidence {
-    static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
+    static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules().registerModule(io.github.markpollack.judge.serialization.ResultJson.module());
     public record Build(int exitCode, boolean timedOut, boolean drained, long elapsedMs, FileRef log) {
         public boolean passed() { return !timedOut && drained && exitCode == 0; }
     }
