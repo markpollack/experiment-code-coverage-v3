@@ -25,7 +25,8 @@ public final class TestQualityJudge implements Judge {
             String rubric=Files.readString(prompt);
             Files.writeString(evidence.resolve("prompt.txt"),rubric,StandardOpenOption.CREATE_NEW);
             var options=ClaudeAgentOptions.builder().model("claude-sonnet-4-6")
-                    .allowedTools(List.of("Read","Glob","Grep")).yolo(false).timeout(Duration.ofMinutes(3)).build();
+                    .tools(List.of("Read","Glob","Grep")).allowedTools(List.of("Read","Glob","Grep"))
+                    .disallowedTools(List.of("mcp__*")).yolo(false).timeout(Duration.ofMinutes(3)).build();
             try(var model=ClaudeAgentModel.builder().workingDirectory(workspace).timeout(Duration.ofMinutes(3))
                     .capture(new ClaudeCaptureOptions(evidence.resolve("acquired"),"quality-"+UUID.randomUUID(),"2.1.316"))
                     .defaultOptions(options).build()) {
