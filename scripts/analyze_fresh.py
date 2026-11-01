@@ -15,6 +15,25 @@ def sha(path):
 
 def selected_jury(row, result_path, evidence):
     """Keep producer bytes and bind every judgment to this immutable assessment revision."""
+    result = json.loads(result_path.read_text())
+    parents = [ref for ref in result.get("runtimeArtifacts", [])
+               if ref.get("subject") == "selected-assessment-result"]
+    assessment_path = result_path
+    if parents:
+        if len(parents) != 1:
+            raise ValueError("Ambiguous selected assessment parent")
+        assessment_path = Path(parents[0]["path"])
+        if sha(assessment_path) != parents[0]["sha256"]:
+            raise ValueError("Selected assessment parent hash mismatch")
+        parent = json.loads(assessment_path.read_text())
+        if len(parent["items"]) != 1:
+            raise ValueError("Selected assessment parent cardinality mismatch")
+        selected = parent["items"][0]
+        if (parent["experimentId"] != result["experimentId"] or
+                selected["identity"] != row["identity"] or
+                selected["verdicts"] != row["verdicts"] or
+                selected["invocations"][0]["attempt"] != row["invocations"][0]["attempt"]):
+            raise ValueError("Selected assessment parent association mismatch")
     documents = row["verdicts"]
     if len(documents) != (1 if row["judgeState"] == "RETURNED" else 0):
         raise ValueError("Final Jury envelope cardinality mismatch")
@@ -46,7 +65,8 @@ def selected_jury(row, result_path, evidence):
                    "invocation_id": acquired["acquisition_uid"]}
     association = {"assessment_identity": row["identity"],
                    "task_invocation_id": row["invocations"][0]["attempt"]["invocationId"],
-                   "assessment_revision_path": str(result_path), "assessment_revision_sha256": sha(result_path),
+                   "assessment_revision_path": str(assessment_path), "assessment_revision_sha256": sha(assessment_path),
+                   "combined_result_path": str(result_path), "combined_result_sha256": sha(result_path),
                    "judge_evidence_root": str(evidence), "quality_acquisition": quality}
     final = {"judge_name": "final_jury", "status": document["conclusion"],
              "producer_document": document, "source_path": str(result_path),

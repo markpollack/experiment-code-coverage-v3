@@ -97,6 +97,28 @@ class MappingTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'producer hash'):
                 module.mapping(result, export, receipt, evidence, 1)
 
+    def test_combined_result_retains_selected_parent_and_rejects_wrong_association(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result, export, receipt, evidence, document = self.selected_fixture(Path(directory))
+            combined = Path(directory) / 'combined.json'
+            data = json.loads(result.read_text())
+            data['runtimeArtifacts'] = [{'subject': 'selected-assessment-result',
+                'path': str(result), 'sha256': module.sha(result)}]
+            combined.write_text(json.dumps(data))
+            details = module.mapping(combined, export, receipt, evidence, 1)['inputs'][0]['judge_details']
+            self.assertEqual(4, len(details))
+            for detail in details:
+                self.assertEqual(str(result), detail['assessment_revision_path'])
+                self.assertEqual(module.sha(result), detail['assessment_revision_sha256'])
+                self.assertEqual(str(combined), detail['combined_result_path'])
+            wrong = json.loads(result.read_text())
+            wrong['items'][0]['invocations'][0]['attempt']['invocationId'] = 'another-task'
+            result.write_text(json.dumps(wrong))
+            data['runtimeArtifacts'][0]['sha256'] = module.sha(result)
+            combined.write_text(json.dumps(data))
+            with self.assertRaisesRegex(ValueError, 'parent association'):
+                module.mapping(combined, export, receipt, evidence, 1)
+
     def test_final_jury_failure_is_not_replaced_by_individual_passes(self):
         with tempfile.TemporaryDirectory() as directory:
             result, export, receipt, evidence, document = self.selected_fixture(Path(directory))
