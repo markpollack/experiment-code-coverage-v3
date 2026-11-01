@@ -1,88 +1,49 @@
 package io.tuvium.experiment.coverage;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import io.github.markpollack.experiment.runtime.AgentRecords.*;
+import io.github.markpollack.judge.Judge;
+import io.github.markpollack.judge.coverage.*;
+import io.github.markpollack.judge.exec.BuildSuccessJudge;
+import io.github.markpollack.judge.judgment.*;
+import io.github.markpollack.judge.jury.*;
+import io.github.markpollack.judge.verdict.RoutingRule;
+import io.github.markpollack.judge.voting.ConsensusStrategy;
+import io.tuvium.experiment.coverage.judge.TestQualityJudge;
+import java.nio.file.*;
+import java.util.*;
 
-import org.springaicommunity.judge.Judge;
-import org.springaicommunity.judge.jury.CascadedJury;
-import org.springaicommunity.judge.jury.ConsensusStrategy;
-import org.springaicommunity.judge.jury.Jury;
-import org.springaicommunity.judge.jury.SimpleJury;
-import org.springaicommunity.judge.jury.TierConfig;
-import org.springaicommunity.judge.jury.TierPolicy;
-
-/**
- * Factory for building {@link Jury} instances.
- *
- * <p>Pre-wired tier structure for code coverage experiments:
- * <ul>
- *   <li>Tier 0: BuildSuccessJudge (./mvnw test) — REJECT_ON_ANY_FAIL</li>
- *   <li>Tier 1: JaCoCo coverage judge — ACCEPT_ON_ALL_PASS</li>
- *   <li>Tier 2: Practice adherence LLM judge — FINAL_TIER</li>
- * </ul>
- */
-public class JuryFactory {
-
-	private final Map<Integer, List<Judge>> tierJudges;
-
-	private final Map<Integer, TierPolicy> tierPolicies;
-
-	public JuryFactory(Map<Integer, List<Judge>> tierJudges, Map<Integer, TierPolicy> tierPolicies) {
-		this.tierJudges = tierJudges;
-		this.tierPolicies = tierPolicies;
-	}
-
-	public Jury build(VariantSpec variant) {
-		List<TierConfig> tiers = new ArrayList<>();
-
-		for (var entry : tierJudges.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
-			int tierNum = entry.getKey();
-			List<Judge> judges = entry.getValue();
-			TierPolicy policy = tierPolicies.getOrDefault(tierNum, TierPolicy.FINAL_TIER);
-
-			SimpleJury.Builder juryBuilder = SimpleJury.builder()
-					.votingStrategy(new ConsensusStrategy());
-			for (Judge judge : judges) {
-				juryBuilder.judge(judge);
-			}
-			SimpleJury tierJury = juryBuilder.build();
-			tiers.add(new TierConfig("tier-" + tierNum, tierJury, policy));
-		}
-
-		CascadedJury.Builder cascadeBuilder = CascadedJury.builder();
-		for (TierConfig tier : tiers) {
-			cascadeBuilder.tier(tier.name(), tier.jury(), tier.policy());
-		}
-		return cascadeBuilder.build();
-	}
-
-	public static Builder builder() {
-		return new Builder();
-	}
-
-	public static class Builder {
-
-		private final Map<Integer, List<Judge>> tierJudges = new TreeMap<>();
-
-		private final Map<Integer, TierPolicy> tierPolicies = new HashMap<>();
-
-		public Builder addJudge(int tier, Judge judge) {
-			tierJudges.computeIfAbsent(tier, k -> new ArrayList<>()).add(judge);
-			return this;
-		}
-
-		public Builder tierPolicy(int tier, TierPolicy policy) {
-			tierPolicies.put(tier, policy);
-			return this;
-		}
-
-		public JuryFactory build() {
-			return new JuryFactory(tierJudges, tierPolicies);
-		}
-
-	}
-
+/** Configured per item, preserving fail-fast tiers and instrument errors. */
+public final class JuryFactory {
+    public static Jury create(PreparedItem prepared,Domain measured,Path prompt,Path evidence) throws Exception {
+        Path ws=Path.of(prepared.workspace()); Files.createDirectories(evidence);
+        double baseline=CoverageEvidence.value(prepared.baseline(),"lineCoverage");
+        var prior=new ArrayList<Judgment>();
+        Judge build=BuildSuccessJudge.maven("clean","test","jacoco:report","-Dspring-javaformat.skip=true",
+                "-Dmaven.repo.local="+System.getProperty("coverage.mavenRepo")).evidence(ws).build();
+        Judge coverage=()-> {
+            try {
+                var fresh=CoverageEvidence.read(ws.resolve("target/site/jacoco/jacoco.xml"),evidence.resolve("judge-coverage.xml"));
+                double finalLine=CoverageEvidence.value(measured.measurements(),"lineCoverage");
+                if(Math.abs(fresh.line()-finalLine)>0.000001) return Judgment.error("Final measurement differs from independently rebuilt report");
+                return CoverageImprovementJudge.builder(50.0,85.0).evidence(new CoverageComparison(ws,baseline)).build().judge();
+            } catch(Exception e) {return Judgment.error("Coverage instrument failure: "+e);}
+        };
+        var cascade=CascadedJury.builder();
+        var judges=List.of(build,coverage,new TestQualityJudge(ws,prompt,evidence.resolve("quality")));
+        var names=List.of("t0_build","t1_coverage","t2_quality");
+        for(int i=0;i<judges.size();i++) {
+            Judge judge=judges.get(i); String name=names.get(i);
+            Judge guarded=()-> {
+                Judgment judgment;
+                if(prior.stream().anyMatch(j->j.status()==JudgmentStatus.ERROR)) judgment=Judgment.error("Earlier instrument error; this tier not executed");
+                else try {judgment=judge.judge();} catch(Exception e) {judgment=Judgment.error("Judge threw: "+e);}
+                prior.add(judgment);
+                try {CoverageEvidence.write(evidence.resolve(name+".json"),judgment);} catch(Exception e) {throw new IllegalStateException("Cannot retain judge evidence",e);}
+                return judgment;
+            };
+            var jury=SimpleJury.builder().judge(name,guarded).votingStrategy(new ConsensusStrategy()).build();
+            cascade.tier("tier-"+i,jury,i==2?RoutingRule.FINAL_TIER:RoutingRule.STOP_ON_ANY_OPINION_FAIL);
+        }
+        return cascade.build();
+    }
 }

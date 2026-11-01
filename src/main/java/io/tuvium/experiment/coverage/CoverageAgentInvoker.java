@@ -1,226 +1,86 @@
 package io.tuvium.experiment.coverage;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import io.github.markpollack.experiment.runtime.*;
+import io.github.markpollack.experiment.runtime.AgentRecords.*;
+import io.github.markpollack.workflow.flows.*;
+import java.nio.file.*;
+import java.time.*;
+import java.util.*;
 
-import io.github.markpollack.experiment.agent.AgentInvocationException;
-import io.github.markpollack.experiment.agent.AgentInvoker;
-import io.github.markpollack.experiment.agent.InvocationContext;
-import io.github.markpollack.experiment.agent.InvocationResult;
-import io.github.markpollack.journal.claude.PhaseCapture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springaicommunity.agents.client.AgentClient;
-import org.springaicommunity.agents.client.AgentClientResponse;
-import org.springaicommunity.agents.claude.ClaudeAgentModel;
-import org.springaicommunity.agents.claude.ClaudeAgentOptions;
-import org.springaicommunity.agents.model.AgentModel;
-import org.springaicommunity.judge.coverage.JaCoCoReportParser;
-import org.springaicommunity.judge.coverage.JaCoCoReportParser.CoverageMetrics;
-import org.springaicommunity.judge.exec.util.MavenBuildRunner;
-import org.springaicommunity.judge.exec.util.MavenBuildRunner.BuildResult;
+/** Concrete domain stages. Shared Experiment owns provider invocation and persistence. */
+public final class CoverageAgentInvoker {
+    public static final long MEASUREMENT_RESERVE_MS=300_000;
+    public static final long DRAIN_RESERVE_MS=30_000;
+    public record Task(Identity identity,String workspace,String prompt,String model,String evidenceRoot) {}
+    public record Prepared(Task task,PreparedItem item,String expandedPrompt) {}
+    public record Invoked(Prepared prepared,ClaudeInvocationService.Outcome outcome) {}
+    public record Measured(Invoked invoked,Domain domain) {}
 
-/**
- * Single-phase coverage agent invoker. Runs the full workflow:
- * compile check, JaCoCo injection, baseline measurement, agent invocation,
- * final coverage measurement.
- */
-public class CoverageAgentInvoker implements AgentInvoker {
-
-	private static final Logger logger = LoggerFactory.getLogger(CoverageAgentInvoker.class);
-
-	// Excludes application bootstrap classes (main() methods) which agents must not test.
-	private static final String JACOCO_PLUGIN_SNIPPET = """
-			<plugin>
-				<groupId>org.jacoco</groupId>
-				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.14</version>
-				<configuration>
-					<excludes>
-						<exclude>**/*Application.class</exclude>
-						<exclude>**/*Main.class</exclude>
-					</excludes>
-				</configuration>
-				<executions>
-					<execution>
-						<id>default</id>
-						<goals><goal>prepare-agent</goal></goals>
-					</execution>
-					<execution>
-						<id>report</id>
-						<phase>test</phase>
-						<goals><goal>report</goal></goals>
-					</execution>
-				</executions>
-			</plugin>
-			""";
-
-	@Override
-	public InvocationResult invoke(InvocationContext context) throws AgentInvocationException {
-		long startTime = System.currentTimeMillis();
-		Path workspace = context.workspacePath();
-
-		String itemSlug = context.metadata().getOrDefault("itemId", workspace.getFileName().toString());
-		logger.info("=== Coverage Agent: {} ===", itemSlug);
-
-		// 1. Verify project compiles
-		logger.info("Step 1: Verifying project compiles");
-		BuildResult compileResult = MavenBuildRunner.runBuild(workspace, 5,
-				"clean", "compile", "-Dspring-javaformat.skip=true");
-		if (!compileResult.success()) {
-			return InvocationResult.error("Project does not compile: " + compileResult.output(),
-					context.metadata());
-		}
-
-		// 2. Ensure JaCoCo plugin
-		ensureJaCoCoPlugin(workspace);
-
-		// 3. Measure baseline coverage
-		CoverageMetrics baseline;
-		if (hasTestFiles(workspace)) {
-			logger.info("Step 3: Measuring baseline coverage");
-			baseline = measureCoverage(workspace);
-			logger.info("Baseline coverage: line={}%, branch={}%",
-					baseline.lineCoverage(), baseline.branchCoverage());
-		}
-		else {
-			logger.info("Step 3: No test files found — baseline is 0%");
-			baseline = new CoverageMetrics(0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, "No tests");
-		}
-
-		// 4. Invoke agent
-		logger.info("Step 4: Invoking agent (model={})", context.model());
-		List<PhaseCapture> phases;
-		String sessionId;
-		try {
-			AgentModel agentModel = ClaudeAgentModel.builder()
-					.workingDirectory(workspace)
-					.defaultOptions(ClaudeAgentOptions.builder()
-							.model(context.model())
-							.yolo(true)
-							.build())
-					.build();
-
-			AgentClient client = AgentClient.create(agentModel);
-			String prompt = buildPrompt(context.prompt(), baseline);
-			AgentClientResponse response = client.goal(prompt).workingDirectory(workspace).run();
-
-			PhaseCapture capture = response.getPhaseCapture();
-			if (capture != null) {
-				logger.info("Agent exhaust: {} turns, {} in + {} out tokens, ${}",
-						capture.numTurns(), capture.inputTokens(), capture.outputTokens(),
-						String.format("%.4f", capture.totalCostUsd()));
-			}
-
-			phases = capture != null ? List.of(capture) : List.of();
-			sessionId = capture != null ? capture.sessionId() : null;
-		}
-		catch (Exception ex) {
-			logger.error("Agent execution failed", ex);
-			phases = List.of();
-			sessionId = null;
-		}
-
-		// 5. Measure final coverage
-		logger.info("Step 5: Measuring final coverage");
-		CoverageMetrics finalCov = measureCoverage(workspace);
-		double improvement = finalCov.lineCoverage() - baseline.lineCoverage();
-		logger.info("Final coverage: line={}%, branch={}% (improvement: {}pp)",
-				finalCov.lineCoverage(), finalCov.branchCoverage(),
-				String.format("%.1f", improvement));
-
-		long durationMs = System.currentTimeMillis() - startTime;
-
-		// 6. Build enriched metadata and return
-		Map<String, String> enrichedMetadata = new HashMap<>(context.metadata());
-		enrichedMetadata.put("baselineCoverage", String.valueOf(baseline.lineCoverage()));
-		enrichedMetadata.put("finalCoverage", String.valueOf(finalCov.lineCoverage()));
-		enrichedMetadata.put("baselineBranchCoverage", String.valueOf(baseline.branchCoverage()));
-		enrichedMetadata.put("finalBranchCoverage", String.valueOf(finalCov.branchCoverage()));
-		enrichedMetadata.put("coverageImprovement", String.valueOf(improvement));
-		enrichedMetadata.put("jacocoReportExists",
-				String.valueOf(Files.isRegularFile(workspace.resolve("target/site/jacoco/jacoco.xml"))));
-
-		return InvocationResult.fromPhases(phases, durationMs, sessionId, enrichedMetadata);
-	}
-
-	private String buildPrompt(String basePrompt, CoverageMetrics baseline) {
-		StringBuilder sb = new StringBuilder(basePrompt);
-		if (baseline.lineCoverage() == 0.0 && baseline.linesTotal() == 0) {
-			sb.append("\n\n## Current State\n");
-			sb.append("No tests exist yet. Coverage is 0%.\n");
-			sb.append("JaCoCo is already configured. Run `./mvnw clean test jacoco:report` to generate reports.\n");
-		}
-		else {
-			sb.append("\n\n## Current Coverage Metrics\n");
-			sb.append("- Line coverage: ").append(String.format("%.1f", baseline.lineCoverage())).append("%\n");
-			sb.append("- Branch coverage: ").append(String.format("%.1f", baseline.branchCoverage())).append("%\n");
-			sb.append("- Lines covered: ").append(baseline.linesCovered())
-					.append("/").append(baseline.linesTotal()).append("\n");
-			sb.append("\nNote: JaCoCo is already configured. Run `./mvnw clean test jacoco:report` to regenerate.\n");
-		}
-		return sb.toString();
-	}
-
-	void ensureJaCoCoPlugin(Path workspace) {
-		Path pomPath = workspace.resolve("pom.xml");
-		if (!Files.isRegularFile(pomPath)) {
-			logger.warn("No pom.xml found in workspace — skipping JaCoCo injection");
-			return;
-		}
-		try {
-			String pom = Files.readString(pomPath);
-			if (pom.contains("jacoco-maven-plugin")) {
-				logger.info("Step 2: JaCoCo plugin already present");
-				return;
-			}
-			logger.info("Step 2: Injecting JaCoCo plugin into pom.xml");
-			String updated;
-			if (pom.contains("</plugins>")) {
-				updated = pom.replace("</plugins>", JACOCO_PLUGIN_SNIPPET + "    </plugins>");
-			}
-			else if (pom.contains("</build>")) {
-				updated = pom.replace("</build>",
-						"    <plugins>\n" + JACOCO_PLUGIN_SNIPPET + "    </plugins>\n  </build>");
-			}
-			else {
-				updated = pom.replace("</project>",
-						"  <build>\n    <plugins>\n" + JACOCO_PLUGIN_SNIPPET + "    </plugins>\n  </build>\n</project>");
-			}
-			Files.writeString(pomPath, updated);
-		}
-		catch (IOException ex) {
-			throw new UncheckedIOException("Failed to inject JaCoCo plugin", ex);
-		}
-	}
-
-	private CoverageMetrics measureCoverage(Path workspace) {
-		BuildResult result = MavenBuildRunner.runBuild(workspace, 10,
-				"clean", "test", "jacoco:report", "-Dspring-javaformat.skip=true");
-		if (result.success()) {
-			return JaCoCoReportParser.parse(workspace);
-		}
-		logger.warn("Test execution failed during coverage measurement: {}",
-				result.output().substring(0, Math.min(500, result.output().length())));
-		return new CoverageMetrics(0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, "Tests failed");
-	}
-
-	private boolean hasTestFiles(Path workspace) {
-		Path testJavaDir = workspace.resolve("src/test/java");
-		if (!Files.isDirectory(testJavaDir)) {
-			return false;
-		}
-		try (var stream = Files.walk(testJavaDir)) {
-			return stream.anyMatch(p -> p.toString().endsWith(".java"));
-		}
-		catch (IOException ex) {
-			return false;
-		}
-	}
-
+    public static final class Prepare implements Step<Task,Prepared> {
+        public Prepared execute(StepContext context,Task task) {
+            try { return executeChecked(context,task); }
+            catch (Exception e) { throw new IllegalStateException("Coverage stage failed",e); }
+        }
+        private Prepared executeChecked(StepContext context,Task task) throws Exception {
+            Path ws=Path.of(task.workspace()), evidence=Path.of(task.evidenceRoot()).resolve("domain");
+            var compile=CoverageEvidence.build(ws,evidence,"prepare-compile",CoverageEvidence.remaining(context.deadline(),300_000),"clean","compile");
+            if(!compile.passed()) throw new IllegalStateException("Baseline compilation failed; see " + compile.log().path());
+            // Snapshot already owns JaCoCo configuration; never alter its coverage scope.
+            if(!Files.readString(ws.resolve("pom.xml")).contains("jacoco-maven-plugin")) throw new IllegalStateException("Pinned dataset lost JaCoCo configuration");
+            var build=CoverageEvidence.build(ws,evidence,"baseline",CoverageEvidence.remaining(context.deadline(),600_000),"clean","test","jacoco:report");
+            if(!build.passed()) throw new IllegalStateException("Baseline tests failed; no measured baseline");
+            var baseline=CoverageEvidence.read(ws.resolve("target/site/jacoco/jacoco.xml"),evidence.resolve("baseline.xml"));
+            var item=new PreparedItem(task.identity(),task.workspace(),CoverageEvidence.metrics(baseline,task.identity().launchKey()),List.of(compile.log(),build.log(),baseline.report()));
+            String prompt=task.prompt()+String.format(Locale.ROOT,"\n\n## Current Coverage Metrics\n- Line coverage: %.1f%%\n- Branch coverage: %.1f%%\n- Lines covered: %d/%d\n\nNote: JaCoCo is already configured. Run `./mvnw clean test jacoco:report` to regenerate.\n",baseline.line(),baseline.branch(),baseline.covered(),baseline.covered()+baseline.missed());
+            var prepared=new Prepared(task,item,prompt);
+            CoverageEvidence.write(Path.of(task.evidenceRoot()).resolve("prepared.json"),prepared);
+            Files.writeString(Path.of(task.evidenceRoot()).resolve("expanded-prompt.txt"),prompt,StandardOpenOption.CREATE_NEW);
+            return prepared;
+        }
+    }
+    public static long providerBudget(Instant deadline) {
+        long budget=Duration.between(Instant.now(),deadline).toMillis()-MEASUREMENT_RESERVE_MS-DRAIN_RESERVE_MS;
+        if(budget<=0) throw new IllegalStateException("No provider time after final measurement and drain reserve");
+        return budget;
+    }
+    public static final class Invoke implements Step<Prepared,Invoked> {
+        private final ClaudeInvocationService service;
+        public Invoke(ClaudeInvocationService service) { this.service=service; }
+        public Invoked execute(StepContext context,Prepared prepared) {
+            try { return executeChecked(context,prepared); }
+            catch (Exception e) { throw new IllegalStateException("Coverage stage failed",e); }
+        }
+        private Invoked executeChecked(StepContext context,Prepared prepared) throws Exception {
+            long budget=providerBudget(context.deadline());
+            Path root=Path.of(prepared.task().evidenceRoot());
+            CoverageEvidence.write(root.resolve("provider-budget.json"),Map.of("deadline",context.deadline().toString(),"providerBudgetMs",budget,"measurementReserveMs",MEASUREMENT_RESERVE_MS,"drainReserveMs",DRAIN_RESERVE_MS));
+            var request=new ClaudeInvocationService.Request(prepared.item(),prepared.expandedPrompt(),prepared.task().model(),budget,root.resolve("attempts").resolve(context.attemptId()).toString(),true);
+            var outcome=service.invoke(request,context);
+            if(!outcome.workspaceState().equals("RETAINED")) throw new IllegalStateException("Unsettled provider; forbid successor measurement");
+            var invoked=new Invoked(prepared,outcome);
+            CoverageEvidence.write(root.resolve("invoked.json"),invoked);
+            return invoked;
+        }
+    }
+    public static final class Measure implements Step<Invoked,Measured> {
+        public Measured execute(StepContext context,Invoked invoked) {
+            try { return executeChecked(context,invoked); }
+            catch (Exception e) { throw new IllegalStateException("Coverage stage failed",e); }
+        }
+        private Measured executeChecked(StepContext context,Invoked invoked) throws Exception {
+            if(!invoked.outcome().workspaceState().equals("RETAINED")) throw new IllegalStateException("Quarantined workspace");
+            Path root=Path.of(invoked.prepared().task().evidenceRoot()), ws=Path.of(invoked.prepared().item().workspace());
+            var build=CoverageEvidence.build(ws,root.resolve("domain"),"final",CoverageEvidence.remaining(context.deadline(),MEASUREMENT_RESERVE_MS),"clean","test","jacoco:report");
+            var artifacts=new ArrayList<FileRef>(invoked.prepared().item().artifacts()); artifacts.add(build.log());
+            var metrics=new ArrayList<Measurement>();
+            metrics.add(Measurement.measured("finalBuildExitCode","exit-code",build.exitCode(),build.log().path(),invoked.prepared().item().identity().launchKey()));
+            if(build.passed()) {
+                var finalCov=CoverageEvidence.read(ws.resolve("target/site/jacoco/jacoco.xml"),root.resolve("domain/final.xml"));
+                artifacts.add(finalCov.report()); metrics.addAll(CoverageEvidence.metrics(finalCov,invoked.prepared().item().identity().launchKey()));
+            } else metrics.add(Measurement.unknown("lineCoverage","percent",build.timedOut()?"Final measurement timeout":"Final tests failed",invoked.prepared().item().identity().launchKey()));
+            var measured=new Measured(invoked,new Domain(metrics,artifacts));
+            CoverageEvidence.write(root.resolve("measured.json"),measured);
+            return measured;
+        }
+    }
 }
