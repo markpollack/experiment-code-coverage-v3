@@ -1,8 +1,9 @@
 # Native coverage runner checkpoint
 
-The bounded native path is implemented and deterministically exercised. Native
-submission remains pending coordinator technical acceptance. Explicit Owner
-dollar approval is recorded separately; proposed caps alone are not authorization.
+The first native attempt failed required hook enforcement and was stopped.
+Native retry is held for the owning SDK serialization repair and a new exact
+coordinator review. Owner dollar approval remains recorded separately. The
+deterministic preparation checkpoint below does not establish native deny behavior.
 
 The installed composition uses Client source `af67b38`, SDK `f1d6875`, Journal
 `871011a`, Experiment `80ab773`, released Workflow 0.14.0 and Judge 0.18.0, plus the
@@ -45,3 +46,23 @@ Native coverage remains 0/6 with USD 0 spent before submission. Actualize remain
 outside this runner. An actual cost absent from qualified scoped accounting stays
 UNKNOWN; cumulative observations are not summed. All preexisting local inputs,
 plots and accepted historical closures remain preserved.
+
+## First native attempt — policy wire refusal
+
+The first counted native coverage attempt was stopped after Claude rejected the
+required hook response with a null boolean. The captured native transcript shows
+that two locally denied Bash calls nevertheless executed. Therefore the earlier
+subprocess fixture checked the installed SDK's shape but did not establish native
+deny enforcement. This finding supersedes launch readiness until repaired.
+
+The actual Client failure decision, observed cleanup and incomplete-recording
+snapshot were retained; no success Invocation, Jury pass, reader or ACT acceptance
+is claimed. One of six coverage attempts is consumed, USD 5 remains conservatively
+reserved, and actual cost is UNKNOWN because no final native result was observed.
+The owned process group was empty on return. The original native transcript and
+failed-run artifacts remain unchanged in private custody.
+
+A strict subprocess regression now targets the native nested permission envelope
+and rejects null required booleans. V3 owns its callback configuration; the SDK
+owner owns serializing HookOutput onto the native wire. A retry requires the exact
+repaired artifact, applicable gates and a new named coordinator review.
