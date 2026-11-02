@@ -42,3 +42,8 @@ into a new receipt-owned input directory, records their original paths/hashes, a
 executes the copied evaluator. Later reservations and source edits therefore leave
 those historical references valid. A control changes a separate live ledger and
 both source files after freezing, then verifies the retained inputs still match.
+
+The third native attempt's frozen receipt passes all ten gates and was independently
+accepted by the coordinator. Its exact hash and outcome are recorded in the
+[final owning receipt](native-coverage-acceptance.md). Earlier incomplete receipts
+remain unchanged; they are not replaced by the later successful attempt.

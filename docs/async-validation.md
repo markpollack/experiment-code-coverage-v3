@@ -1,5 +1,9 @@
 # Bounded async coverage validation
 
+**Completed:** the [final native coverage receipt](native-coverage-acceptance.md)
+records acceptance of the third bounded attempt. The dispositions and design
+checkpoints below preserve the preparation and repair sequence.
+
 ## Current disposition
 
 A bounded implementation scope is accepted for a separate deterministic validation

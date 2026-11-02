@@ -2,10 +2,10 @@
 
 Current baseline: [main and its consolidation record](current-baseline.md).
 The [bounded housekeeping disposition](house-in-order.md) is complete.
-The [bounded async validation disposition/design](async-validation.md) accepts
-current installed-consumer preparation, a deterministic Jury and enforced launch
-policy. Native execution remains dependency-gated; historical provider repeats
-and broader studies remain deferred.
+The [bounded native coverage acceptance](native-coverage-acceptance.md) completes
+the installed-consumer path, deterministic Jury, enforced native policy, independent
+archive reader and ACT output. Historical provider repeats and broader studies
+remain deferred.
 
 - Completed: integrate the accepted canonical-runtime implementation and all
   twelve follow-up commits after the original local main, preserving its license
@@ -23,25 +23,25 @@ and broader studies remain deferred.
 - Completed instruction refresh: safe-boundary steering checks are explicit;
   historical consolidation gate observations are separated from current owning
   handoffs. No source/API/POM migration was needed or authorized.
-- Pending dependency adoption: consume Experiment's final package/artifact handoff
-  before any separately scoped current-source V3 check. Client review/design,
-  stable-consumer policy and upstream publication decisions remain owning gates.
+- Completed bounded dependency adoption: consume the exact Experiment, Client,
+  SDK and Journal installed composition recorded in native coverage acceptance.
+  Broader producer and publication decisions remain owning gates.
 - Completed preparation: pinned input copier, deterministic Jury and test-only
   tool policy against actual installed artifacts; full offline Java/Python and
   separate installed producer/reader controls passed. Semantic T2 is NOT_ASSESSED.
-- Active native adoption: actual async bridge/invocation mapping, installed
+- Completed native adoption: actual async bridge/invocation mapping, installed
   before-tool/spend/deadline enforcement and complete source-qualified archive,
   independent readback and ACT output; no blocking fallback.
-- Active bounded post-run consolidation: one separately versioned acceptance
-  receipt over existing native/Jury/archive/ACT/accounting gates. Preserve the
-  second attempt and await owning normalization repair; no implicit native replay.
-- Accepted narrow custody amendment: retain the actual observed Client response
+- Completed bounded post-run consolidation: one separately versioned acceptance
+  receipt passes all native/Jury/archive/ACT/accounting gates for the third attempt.
+  Earlier failed attempts and original results remain immutable.
+- Completed narrow custody amendment: retain the actual observed Client response
   before archive validation, with cleanup-safe finally retention and no response
   reconstruction or change to upstream Invocation/Workflow semantics.
 - Deferred: historical reader retirement, broader ingestion migration, unrelated
   features, Codex qualification, semantic quality reassessment and historical
   provider/repeat work.
 
-The current bounded scope requires exact dependency closure and a prelaunch
-checkpoint. No later phase starts from this roadmap. The independent Owner-led Client
+The bounded coverage objective is complete after three of six authorized submissions.
+No later phase starts from this roadmap. The independent Owner-led Client
 session owns async; portfolio owns cross-project coordination. This project does not launch or replace either writer.

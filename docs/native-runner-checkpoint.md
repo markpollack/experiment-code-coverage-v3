@@ -1,5 +1,10 @@
 # Native coverage runner checkpoint
 
+**Current result:** the third bounded native attempt is accepted through the full
+Jury, archive, detached reader, ACT and consolidated acceptance gates. See the
+[final owning receipt](native-coverage-acceptance.md) for exact artifact identities,
+accounting and preservation. The checkpoints below retain their original sequence.
+
 The first native attempt failed required hook enforcement and was stopped.
 The second used the exact repaired SDK after a separate coordinator review.
 It returned native success and confirmed observed cleanup, but source/assembly
