@@ -15,6 +15,8 @@
   </dependencies></dependencyManagement>
   <dependencies>
     <dependency><groupId>io.github.markpollack</groupId><artifactId>experiment-runtime</artifactId><version>0.10.0-SNAPSHOT</version></dependency>
+    <dependency><groupId>io.github.markpollack</groupId><artifactId>agent-client-claude</artifactId><version>0.32.1-SNAPSHOT</version></dependency>
+    <dependency><groupId>io.github.markpollack</groupId><artifactId>agent-client-journal</artifactId><version>0.32.1-SNAPSHOT</version></dependency>
     <dependency><groupId>io.github.markpollack</groupId><artifactId>agent-judge-exec</artifactId><version>0.18.0</version></dependency>
     <dependency><groupId>org.yaml</groupId><artifactId>snakeyaml</artifactId><version>2.7</version></dependency>
     <dependency><groupId>org.jspecify</groupId><artifactId>jspecify</artifactId><version>1.0.1</version></dependency>

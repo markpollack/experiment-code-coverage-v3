@@ -129,3 +129,21 @@ before native execution. Actual hook/argv/model/cap wiring will first be checked
 with deterministic subprocesses against the installed APIs. A new prelaunch review
 must accept exact source/artifact/input pins and enforcement evidence before any
 of the six coverage attempts is submitted. Counter remains 0/6 and spend USD 0.
+
+### Installed Client wiring checkpoint
+
+The concrete configuration uses the public native provider with model pinned in
+AgentClient default options, the required synchronous before-tool callback, USD 5
+native cap, 900-second subject limit and 15-second observed-resource cleanup.
+Deterministic subprocess checks confirm actual model/budget argv, allowed test
+writes and denied protected/absolute-glob actions, deadline cessation, unsuccessful
+budget exhaustion and incomplete capture on 4 MiB overflow. These are wiring
+checks, separate from native/archive qualification. Failed policy evidence denies
+the tool. Hooks also require the actual selected working directory.
+
+The packaged entry point requires matching `coverage.mavenRepo` and inherited
+`MAVEN_ARGS=-Dmaven.repo.local=<task-local repository>`; this routes the exact allowed
+Maven command to the selected copied cache without changing pinned task bytes or
+shared configuration. Native response accounting remains UNKNOWN until supported
+by qualified scoped terminal/source/ACT evidence. Each submission reserves the
+USD 5 enforced cap; an unknown actual cost is never reported as zero.
