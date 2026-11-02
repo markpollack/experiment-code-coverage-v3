@@ -163,3 +163,16 @@ uncertain admission remains counted. The launch wrapper applies a 1785-second
 soft deadline plus at most 15 seconds of termination grace, keeping the hard
 campaign bound at 1800 seconds across application, readback and ACT. It creates
 only the fresh campaign process group and does not target unrelated processes.
+
+The boundary review identified a failure-custody gap when resource settlement or
+recording observation throws before the attempt snapshot. The accepted correction
+retains actual available handle/decision/recording observations in a bounded final
+snapshot on every admitted exceptional path, with unavailable settlement explicitly
+unknown. It does not elect a replacement outcome or replay the subject. Preparation
+integrity and expanded prompt hashes are retained before native submission.
+Processing completion is distinct from a passing coverage/Jury result.
+
+The activated continuation preserves the existing run counters and owning scope.
+The proposed USD 5 cap is a technical limit; live submission also requires recorded
+Owner dollar approval in the concrete coordinator-reviewed prelaunch manifest.
+A passing deterministic fixture does not consume or authorize native inference.

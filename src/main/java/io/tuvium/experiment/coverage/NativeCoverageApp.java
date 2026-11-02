@@ -71,7 +71,7 @@ public final class NativeCoverageApp {
                 "semanticQuality","NOT_ASSESSED","inputs",provenance));
         var task=new Task(identity,workspace.toString(),Files.readString(project.resolve("prompts/v0-simple.txt")),NativeCoverageClient.MODEL,evidence.toString());
         var active=new AtomicReference<AgentExecution>();
-        var invoke=new Invoke(active,evidence,ledger,deadline);
+        var invoke=new Invoke(active,evidence,ledger,deadline,before);
         var prepare=new Prepare(); var measure=new Measure();
         var graph=Workflows.define("coverage-v3-native").maxDuration(Duration.ofMillis(remaining-420_000))
                 .then("prepare-baseline",prepare).then("invoke-native",invoke).then("measure-final",measure)
@@ -112,31 +112,40 @@ public final class NativeCoverageApp {
     static final class Invoke implements Step<Prepared,Invoked> {
         AsyncClientInvocationService service;
         final AtomicReference<AgentExecution> active; final Path evidence, ledger; final Instant outerDeadline;
-        Invoke(AtomicReference<AgentExecution> active,Path evidence,Path ledger,Instant outerDeadline) {
-            this.active=active;this.evidence=evidence;this.ledger=ledger;this.outerDeadline=outerDeadline;
+        final CoverageEditPolicy.Snapshot initial;
+        Invoke(AtomicReference<AgentExecution> active,Path evidence,Path ledger,Instant outerDeadline,CoverageEditPolicy.Snapshot initial) {
+            this.active=active;this.evidence=evidence;this.ledger=ledger;this.outerDeadline=outerDeadline;this.initial=initial;
         }
         public Invoked execute(StepContext context,Prepared prepared) {
             long start=System.nanoTime();
+            AsyncClientInvocationService.StartedExecution started=null;
+            ExecutionTermination termination=null; Attempt attempt=null; Exception failure=null;
             try {
                 long budget=Math.min(900000,CoverageAgentInvoker.providerBudget(context.deadline()));
-                var attempt=new Attempt(prepared.item().identity(),UUID.randomUUID().toString(),context.runId(),
+                attempt=new Attempt(prepared.item().identity(),UUID.randomUUID().toString(),context.runId(),
                         context.invocationId(),context.attemptId(),context.attemptNumber());
+                var preparationPolicy=new CoverageEditPolicy(Path.of(prepared.item().workspace()));
+                var preparationViolations=preparationPolicy.violations(initial);
+                CoverageEvidence.write(evidence.resolve("preparation-edit-surface.json"),Map.of("violations",preparationViolations));
+                if(!preparationViolations.isEmpty()) throw new IllegalStateException("Preparation changed protected task inputs");
+                var preparedSnapshot=preparationPolicy.snapshot();
+                CoverageEvidence.write(evidence.resolve("prepared-protected-snapshot.json"),preparedSnapshot);
+                CoverageEvidence.write(evidence.resolve("expanded-prompt-provenance.json"),Map.of(
+                        "basePromptSha256",Evidence.sha256(prepared.task().prompt().getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                        "expandedPromptSha256",Evidence.sha256(prepared.expandedPrompt().getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                        "basis","Pinned base prompt plus existing deterministic baseline metrics"));
                 NativeCoverageLedger.reserve(ledger,attempt.row().runId());
                 CoverageEvidence.write(evidence.resolve("submission.json"),Map.of("attempt",attempt,"providerBudgetMs",budget,
                         "reservedUsd",5,"actualCostState","UNKNOWN","startedAt",Instant.now().toString()));
-                var started=service.start(attempt,Path.of(prepared.item().workspace()),prepared.expandedPrompt(),Duration.ofMillis(budget));
+                started=service.start(attempt,Path.of(prepared.item().workspace()),prepared.expandedPrompt(),Duration.ofMillis(budget));
                 var handle=started.execution(); active.set(handle);
                 AgentClientResponse response=null; Exception responseFailure=null;
-                try {response=handle.result();} catch (Exception failure) {responseFailure=failure;}
-                var termination=handle.awaitTermination(NativeCoverageClient.CLEANUP_LIMIT);
+                try {response=handle.result();} catch (Exception responseError) {responseFailure=responseError;}
+                termination=handle.awaitTermination(NativeCoverageClient.CLEANUP_LIMIT);
                 long recordingDeadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(35);
                 while (!(handle.recording().delivery() instanceof TerminalDelivery.Completed)
                         && !(handle.recording().delivery() instanceof TerminalDelivery.Failed)
                         && System.nanoTime()<recordingDeadline && Instant.now().isBefore(outerDeadline)) Thread.sleep(10);
-                var raw=new LinkedHashMap<String,Object>(); raw.put("attempt",attempt);raw.put("executionId",handle.executionId());
-                raw.put("decision",started.decision().orElse(null)); raw.put("termination",termination);
-                raw.put("recording",handle.recording().toString());raw.put("responseFailure",responseFailure==null?"":responseFailure.toString());
-                CoverageEvidence.write(evidence.resolve("native-attempt.json"),raw);
                 if(responseFailure!=null) throw responseFailure;
                 if(response==null || !response.isSuccessful()) throw new IllegalStateException("Native response unsuccessful");
                 if(!(handle.recording().delivery() instanceof TerminalDelivery.Completed completed))
@@ -145,7 +154,17 @@ public final class NativeCoverageApp {
                 var invocation=NativeClientInvocation.accept(started,termination,evidence.resolve("sources").resolve(handle.executionId()).resolve("acquisition.json"),
                         evidence.resolve("journal/native-"+handle.executionId()),events,budget,TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-start));
                 var invoked=new Invoked(prepared,invocation);CoverageEvidence.write(evidence.resolve("invoked.json"),invoked);return invoked;
-            } catch (Exception failure) {throw new IllegalStateException("Native coverage invocation failed",failure);}
+            } catch (Exception problem) {
+                failure=problem;
+                throw new IllegalStateException("Native coverage invocation failed",problem);
+            } finally {
+                if(attempt!=null && Files.exists(evidence.resolve("submission.json"))) try {
+                    NativeAttemptCustody.retain(evidence.resolve("native-attempt.json"),attempt,started,termination,failure);
+                } catch(Exception custodyFailure) {
+                    if(failure!=null) failure.addSuppressed(custodyFailure);
+                    else throw new IllegalStateException("Native attempt custody failed",custodyFailure);
+                }
+            }
         }
     }
     static Path selectPrepared(Path journal,String binding,String execution,String decision) throws Exception {

@@ -27,6 +27,13 @@ def verified_manifest(path):
     data = json.loads(path.read_text())
     if data.get('kind') != 'v3-native-coverage-launch/1' or not data.get('prelaunchReview'):
         raise ValueError('Named coordinator prelaunch review is required')
+    if data.get('mode') not in ('NATIVE', 'SYNTHETIC_FIXTURE'):
+        raise ValueError('Explicit native or synthetic-fixture launch mode required')
+    if data['mode'] == 'NATIVE':
+        approval = data.get('ownerSpendApproval') or {}
+        if (not approval.get('reference') or approval.get('maxUsdPerAttempt', 0) < 5
+                or not 1 <= approval.get('maxCoverageAttempts', 0) <= 6):
+            raise ValueError('Actual Owner dollar approval must cover this USD 5 capped launch')
     selected = {}
     for ref in data['files']:
         file = Path(ref['path']).resolve(strict=True)
