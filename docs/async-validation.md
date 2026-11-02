@@ -108,3 +108,24 @@ Native coverage attempts remain 0 of 6; inference spend remains USD 0. The async
 invocation adapter, actual pre-tool hook installation, native spend/deadline
 propagation, complete archive/independent reader and ACT output are still required
 before a live prelaunch checkpoint. No legacy runner fallback is authorized.
+
+## Native runner adoption — active bounded scope
+
+The next bounded implementation step accepts the installed public native Client
+provider and Experiment's configured async start/association mapper. The runner
+will use one fresh one-shot connection, the selected required tool policy,
+claude-sonnet-4-6, actual execution timeout and a USD 5 native generation cap.
+Client owns admission, decisions, deadline/cancel/cleanup and recording; Experiment
+owns native Invocation conversion and immutable storage. V3 will not add another
+provider engine or substitute the historical blocking runner.
+
+The runner must retain original capture bytes, native source qualification, the
+receiver binding selected by its actual completion receipt, independent TCK-only
+archive readback, full deterministic Jury and ACT output. Source capture overflow
+at 4 MiB is incomplete evidence and cannot pass. Shutdown/escaped-child containment
+is not added as a prerequisite to the explicitly observed-resource cleanup scope.
+The exact repaired SDK/Journal artifacts and Experiment native mapping are required
+before native execution. Actual hook/argv/model/cap wiring will first be checked
+with deterministic subprocesses against the installed APIs. A new prelaunch review
+must accept exact source/artifact/input pins and enforcement evidence before any
+of the six coverage attempts is submitted. Counter remains 0/6 and spend USD 0.

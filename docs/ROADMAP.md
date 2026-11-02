@@ -29,7 +29,7 @@ and broader studies remain deferred.
 - Completed preparation: pinned input copier, deterministic Jury and test-only
   tool policy against actual installed artifacts; full offline Java/Python and
   separate installed producer/reader controls passed. Semantic T2 is NOT_ASSESSED.
-- Pending native adoption: actual async bridge/invocation mapping, installed
+- Active native adoption: actual async bridge/invocation mapping, installed
   before-tool/spend/deadline enforcement and complete source-qualified archive,
   independent readback and ACT output; no blocking fallback.
 - Deferred: historical reader retirement, broader ingestion migration, unrelated
