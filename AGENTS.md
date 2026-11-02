@@ -18,7 +18,7 @@ changes. Provider calls, experiment repeats and quality reassessment require a
 separate explicit authorization. A local build does not publish dependencies or
 qualify entire upstream libraries.
 
-For bounded housekeeping, check relevant new local inbox messages and named
+For bounded execution, check relevant new local inbox messages and named
 upstream handoffs at entry, safe step boundaries and before completion. Read
 fresh incoming refs after a safe fetch; do not overwrite unrelated work to obtain
 steering. Record the project's own acknowledgment/disposition, and defer

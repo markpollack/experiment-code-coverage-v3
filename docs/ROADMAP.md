@@ -2,7 +2,10 @@
 
 Current baseline: [main and its consolidation record](current-baseline.md).
 The [bounded housekeeping disposition](house-in-order.md) is complete.
-Implementation, dependency adoption and provider work await separate authorization.
+The [bounded async validation disposition/design](async-validation.md) accepts
+current installed-consumer preparation, a deterministic Jury and enforced launch
+policy. Native execution remains dependency-gated; historical provider repeats
+and broader studies remain deferred.
 
 - Completed: integrate the accepted canonical-runtime implementation and all
   twelve follow-up commits after the original local main, preserving its license
@@ -23,9 +26,14 @@ Implementation, dependency adoption and provider work await separate authorizati
 - Pending dependency adoption: consume Experiment's final package/artifact handoff
   before any separately scoped current-source V3 check. Client review/design,
   stable-consumer policy and upstream publication decisions remain owning gates.
-- Deferred: historical reader retirement, broader ingestion migration, new features,
-  async, Codex qualification, quality reassessment and all provider/repeat work.
+- Active: prepare the pinned simple task for a separate deterministic async
+  validation path, using actual installed dependencies and preserving semantic
+  T2 as NOT_ASSESSED. Exact native bridge/profile and launch enforcement remain
+  prerequisite gates, with no blocking fallback.
+- Deferred: historical reader retirement, broader ingestion migration, unrelated
+  features, Codex qualification, semantic quality reassessment and historical
+  provider/repeat work.
 
-A future Owner decision must name the exact dependency closure and bounded next
-task. No next phase starts from this roadmap. The independent Owner-led Client
+The current bounded scope requires exact dependency closure and a prelaunch
+checkpoint. No later phase starts from this roadmap. The independent Owner-led Client
 session owns async; portfolio owns cross-project coordination. This project does not launch or replace either writer.

@@ -1,7 +1,7 @@
 # Coverage experiment v3
 
-**Current state: main is the sole development line. Bounded housekeeping is complete; implementation, dependency adoption and provider runs await separate authorization.**
-Read the [current disposition](docs/house-in-order.md), [frozen tested baseline](docs/current-baseline.md) and [roadmap](docs/ROADMAP.md) first.
+**Current state: main is the sole development line. Bounded async validation preparation is active; native execution remains gated on exact upstream qualification and enforced launch controls.**
+Read the [current disposition](docs/house-in-order.md), [frozen tested baseline](docs/current-baseline.md) [roadmap](docs/ROADMAP.md) and [async validation design](docs/async-validation.md) first.
 
 The application runs the checked-in partial PetClinic task using the original simple and hardened-skills prompts, Claude Sonnet 4.6, and the shared Experiment canonical runtime. Java 21 is required.
 
