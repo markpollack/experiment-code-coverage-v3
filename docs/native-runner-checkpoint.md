@@ -1,8 +1,11 @@
 # Native coverage runner checkpoint
 
 The first native attempt failed required hook enforcement and was stopped.
-The owning SDK serialization repair is consumed. Native retry is held for a
-new exact coordinator review and actual denial/application verification. Owner dollar approval remains recorded separately. The
+The second used the exact repaired SDK after a separate coordinator review.
+It returned native success and confirmed observed cleanup, but source/assembly
+normalization rejected multiple terminal permission denials. Coverage acceptance
+is held for the owning Journal repair and the remaining independent gates.
+Owner dollar approval remains recorded separately. The
 deterministic preparation checkpoint below does not establish native deny behavior.
 
 The installed composition uses Client source `af67b38`, SDK `f1d6875`, Journal
@@ -82,3 +85,27 @@ JAR SHA256 is `e995eeb0fb6c75797f1b06e76304b6e3a495ef5b4da37d11e92aa3f362b8e35a`
 Full V3 offline verification again passes 29 Java and nine Python tests against
 that exact artifact. The stricter fixture includes both emitted allow/deny results
 and omission of every absent optional control from V3's unchanged callback.
+
+## Second native attempt
+
+The original callback and pinned task/prompt were retained. All four naturally
+denied actions have explicit native error results with the exact hook rejection
+reason; no successful denied result or native hook-schema error was observed.
+The source files match their acquisition hashes, and protected files/executable
+flags remain unchanged. These observations are separate from archive acceptance.
+
+The native execution returned success with complete capture and a completed Client
+recording receipt. Journal normalization rejected the four permission-denial
+subjects in the terminal result as conflicting identities. The pipeline stopped
+before native Invocation acceptance, independent Jury, detached reader and ACT.
+The native task's reported improvement is not yet an independently accepted result.
+Retain the original decision, capture, failed validation and workspace; do not replay
+the completed subject implicitly or rewrite its failed pipeline result.
+
+Coverage submissions are two of six, with USD 10 cumulative capped reservations.
+The first actual charge remains unknown. The second terminal reports USD 2.2709234,
+pending complete independent source/assembly acceptance; no cumulative observation
+is summed. No additional submission follows from this checkpoint.
+
+The separately versioned [post-run acceptance evaluator](post-run-acceptance.md)
+will consolidate the existing required checks without changing the frozen runner.

@@ -32,6 +32,9 @@ and broader studies remain deferred.
 - Active native adoption: actual async bridge/invocation mapping, installed
   before-tool/spend/deadline enforcement and complete source-qualified archive,
   independent readback and ACT output; no blocking fallback.
+- Active bounded post-run consolidation: one separately versioned acceptance
+  receipt over existing native/Jury/archive/ACT/accounting gates. Preserve the
+  second attempt and await owning normalization repair; no implicit native replay.
 - Deferred: historical reader retirement, broader ingestion migration, unrelated
   features, Codex qualification, semantic quality reassessment and historical
   provider/repeat work.
