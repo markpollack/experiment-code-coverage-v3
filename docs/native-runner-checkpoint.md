@@ -3,8 +3,9 @@
 The first native attempt failed required hook enforcement and was stopped.
 The second used the exact repaired SDK after a separate coordinator review.
 It returned native success and confirmed observed cleanup, but source/assembly
-normalization rejected multiple terminal permission denials. Coverage acceptance
-is held for the owning Journal repair and the remaining independent gates.
+normalization rejected multiple terminal permission denials. The repaired reader
+now accepts that original archive; the original failed Workflow and missing
+downstream Jury/ACT remain unchanged. A fresh attempt requires its own review.
 Owner dollar approval remains recorded separately. The
 deterministic preparation checkpoint below does not establish native deny behavior.
 
@@ -104,8 +105,30 @@ the completed subject implicitly or rewrite its failed pipeline result.
 
 Coverage submissions are two of six, with USD 10 cumulative capped reservations.
 The first actual charge remains unknown. The second terminal reports USD 2.2709234,
-pending complete independent source/assembly acceptance; no cumulative observation
-is summed. No additional submission follows from this checkpoint.
+now supported by independent source/assembly readback; the original Client cost
+observation remains UNKNOWN. No cumulative observation is summed. No additional
+submission follows from this checkpoint.
 
 The separately versioned [post-run acceptance evaluator](post-run-acceptance.md)
 will consolidate the existing required checks without changing the frozen runner.
+
+## Third-run preparation
+
+The exact repaired Journal TCK source `e7cb1e3` accepts the untouched second-run
+archive with all four original denial identities. The selected writer payload is
+unchanged; only its package metadata differs. New Client artifacts built at
+`5828678` (final documentation `f98cc64`) likewise preserve every production entry
+from the previously selected Client. SDK `2f31aff8` and Experiment `80ab773` remain.
+
+V3 source `1b0754b` adds cleanup-safe observed response custody. Its full isolated
+offline build passes 32 Java tests and 14 Python tests against that exact new
+composition. A separate JVM using the frozen 61-JAR reader closure, without Client,
+SDK or writer, accepts the original second-run source/assembly. No subject is replayed.
+
+Prepared application JAR SHA256:
+`d1cbbc275289c9c16683326b8a56ba226fed8057801938e91a24d9ab7555eb84`.
+The 68-JAR runtime manifest SHA256 is
+`ff5d81c0a5669e6fffaba23b58c1a45c902052b2c8e8870457366f6620337b21`.
+The exact private launch manifest still needs a named third-run technical review.
+All original local extra entries and the second attempt's frozen evidence remain
+hash-identical. Native submissions remain two of six.
