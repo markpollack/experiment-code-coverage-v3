@@ -35,6 +35,9 @@ and broader studies remain deferred.
 - Active bounded post-run consolidation: one separately versioned acceptance
   receipt over existing native/Jury/archive/ACT/accounting gates. Preserve the
   second attempt and await owning normalization repair; no implicit native replay.
+- Accepted narrow custody amendment: retain the actual observed Client response
+  before archive validation, with cleanup-safe finally retention and no response
+  reconstruction or change to upstream Invocation/Workflow semantics.
 - Deferred: historical reader retirement, broader ingestion migration, unrelated
   features, Codex qualification, semantic quality reassessment and historical
   provider/repeat work.

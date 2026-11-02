@@ -176,3 +176,26 @@ The activated continuation preserves the existing run counters and owning scope.
 The proposed USD 5 cap is a technical limit; live submission also requires recorded
 Owner dollar approval in the concrete coordinator-reviewed prelaunch manifest.
 A passing deterministic fixture does not consume or authorize native inference.
+
+## Observed response custody amendment
+
+The second native attempt exposed a postprocessing boundary: the live Client
+response was local when independent archive validation threw. Its original native
+success/source/decision survive, but no observed Client response projection or
+accepted Invocation was persisted. The failed Workflow remains immutable.
+
+The accepted narrow correction captures exact observed result text (including
+null), success flag, observation state/time and original Attempt/Client identities
+immediately when the actual result returns. Retrieval errors retain THREW with no
+invented text. Keep the observation in outer scope; settle resources before a
+custody write may escape, retain it before archive admission and again through
+the existing finally path on failure. Identical repeated retention is allowed;
+conflicting prior bytes are refused without overwrite. Original failures remain
+primary and custody failures remain visible.
+
+This is diagnostic projection custody, not an AgentClientResponse serialization,
+new admission API, replacement handle or recovery engine. A real Client fixture
+followed by forced verifier failure must retain the actual response/identity and
+observed cleanup while preserving failure and absence of invocation output.
+Journal's owning normalization repair and a new named review are still required
+before another counted native attempt.
