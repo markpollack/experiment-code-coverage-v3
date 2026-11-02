@@ -26,10 +26,12 @@ and broader studies remain deferred.
 - Pending dependency adoption: consume Experiment's final package/artifact handoff
   before any separately scoped current-source V3 check. Client review/design,
   stable-consumer policy and upstream publication decisions remain owning gates.
-- Active: prepare the pinned simple task for a separate deterministic async
-  validation path, using actual installed dependencies and preserving semantic
-  T2 as NOT_ASSESSED. Exact native bridge/profile and launch enforcement remain
-  prerequisite gates, with no blocking fallback.
+- Completed preparation: pinned input copier, deterministic Jury and test-only
+  tool policy against actual installed artifacts; full offline Java/Python and
+  separate installed producer/reader controls passed. Semantic T2 is NOT_ASSESSED.
+- Pending native adoption: actual async bridge/invocation mapping, installed
+  before-tool/spend/deadline enforcement and complete source-qualified archive,
+  independent readback and ACT output; no blocking fallback.
 - Deferred: historical reader retirement, broader ingestion migration, unrelated
   features, Codex qualification, semantic quality reassessment and historical
   provider/repeat work.

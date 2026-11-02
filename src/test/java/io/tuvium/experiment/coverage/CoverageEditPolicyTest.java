@@ -35,6 +35,20 @@ class CoverageEditPolicyTest {
         assertThat(policy.beforeTool("Bash", Map.of("command", CoverageEditPolicy.BUILD_COMMAND, "run_in_background", true)).allowed()).isFalse();
     }
 
+    @Test void globPatternsCannotOverrideTheConfinedSearchRoot() throws Exception {
+        var policy = new CoverageEditPolicy(temp);
+        for (String pattern : List.of("/outside/*", "../*", "src/../../*", "{../*,src/*}", "src/../outside/*"))
+            assertThat(policy.beforeTool("Glob", Map.of("pattern", pattern)).allowed()).as(pattern).isFalse();
+        for (String pattern : List.of("**/*.java", "src/test/**/*Test.java", "*Test.java"))
+            assertThat(policy.beforeTool("Glob", Map.of("pattern", pattern)).allowed()).as(pattern).isTrue();
+        assertThat(policy.beforeTool("Glob", Map.of()).allowed()).isFalse();
+        Path outside = Files.createTempDirectory("v3-policy-outside-");
+        try {
+            Files.createSymbolicLink(temp.resolve("linked"), outside);
+            assertThat(policy.beforeTool("Glob", Map.of("pattern", "linked/*")).allowed()).isFalse();
+        } finally { Files.delete(outside); }
+    }
+
     @Test void postRunIntegrityDetectsProtectedAddsDeletesAndModifications() throws Exception {
         Files.writeString(temp.resolve("pom.xml"), "original");
         Files.writeString(temp.resolve("mvnw"), "original");

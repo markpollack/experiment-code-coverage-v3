@@ -76,3 +76,35 @@ not proof that the native provider installed/enforced the policy; that upstream
 wiring and real before-tool control are still launch prerequisites. This tool
 policy is not an OS filesystem sandbox: source integrity is checked separately.
 The original semantic runner is unchanged and must not be used as an async fallback.
+
+## Verified preparation result
+
+The standalone preparation increment passes the complete offline Java suite
+(21 tests) and all six checked-in Python mapping tests. The packaged input copier
+selected 116 pinned source files and excluded ignored build outputs; deliberately
+changed source and prompt bytes refused before creating a workspace. An initial
+CRLF-versus-Git-LF mismatch in the Windows wrapper was corrected by honoring its
+declared checkout attributes while retaining the original copied bytes.
+
+The coordinator's Glob review was reproduced before correction: an absolute
+pattern bypassed the omitted path check. The policy now requires relative ordinary
+`*`/`?` patterns with no parent components, brace/bracket/escape expansion, or
+symbolic search tree. Useful `**/*.java` and `src/test/**/*Test.java` remain valid.
+The failing regression and corrected full checks are retained in private custody.
+
+A separate installed-JAR producer persisted the real deterministic Jury through
+Experiment's full V6 recording/store path. Another JVM without V3, Client or
+Journal writer classes reopened the exact producer document and retained semantic
+quality NOT_ASSESSED. It was an explicit fixture with no provider workflow, not a
+PetClinic measurement or native/archive qualification.
+
+Current prepared application JAR SHA256:
+`bcd9041b3673b5d265a381bf136245cd127b74973ac3a64232b2737e1abdc2a2`.
+The exact installed dependency manifest is retained privately; identical snapshot
+coordinates alone are insufficient to select this artifact. Historical 66-JAR
+closure and all 19,789 preexisting local extra entries remain hash-identical.
+
+Native coverage attempts remain 0 of 6; inference spend remains USD 0. The async
+invocation adapter, actual pre-tool hook installation, native spend/deadline
+propagation, complete archive/independent reader and ACT output are still required
+before a live prelaunch checkpoint. No legacy runner fallback is authorized.

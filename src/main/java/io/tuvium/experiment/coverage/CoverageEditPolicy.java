@@ -28,13 +28,32 @@ public final class CoverageEditPolicy {
         return switch (tool) {
             case "Write", "Edit", "MultiEdit" -> pathDecision(input.get("file_path"), true, false);
             case "Read" -> pathDecision(input.get("file_path"), false, false);
-            case "Glob", "Grep" -> pathDecision(input.get("path"), false, true);
+            case "Glob" -> globDecision(input);
+            case "Grep" -> pathDecision(input.get("path"), false, true);
             case "Bash" -> BUILD_COMMAND.equals(input.get("command"))
                     && (input.get("run_in_background") == null || Boolean.FALSE.equals(input.get("run_in_background")))
                     ? new Decision(true, "Exact pinned Maven command; native wall/spend caps remain required")
                     : deny("Only the exact foreground Maven command is permitted");
             default -> deny("Tool is outside the selected coverage policy");
         };
+    }
+
+    private Decision globDecision(Map<String, ?> input) {
+        Decision root = pathDecision(input.get("path"), false, true);
+        if (!root.allowed()) return root;
+        if (!(input.get("pattern") instanceof String pattern) || pattern.isBlank())
+            return deny("Explicit relative glob pattern required");
+        // Keep ordinary relative * and ? patterns. Reject alternate-root/escape syntaxes.
+        for (String segment : pattern.split("/", -1))
+            if (segment.equals("..") || !segment.matches("[A-Za-z0-9._?*\\-]+"))
+                return deny("Glob must use a relative path without parent traversal or expansions");
+        Path selected = input.get("path") == null ? workspace
+                : workspace.resolve((String) input.get("path")).normalize();
+        try (var paths = Files.walk(selected)) {
+            if (paths.anyMatch(Files::isSymbolicLink))
+                return deny("Symbolic search trees are not permitted");
+        } catch (IOException failure) { return deny("Search root cannot be checked"); }
+        return new Decision(true, "Confined relative glob");
     }
 
     private Decision pathDecision(Object value, boolean write, boolean defaultRoot) {
