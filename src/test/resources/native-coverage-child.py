@@ -52,9 +52,21 @@ for line in sys.stdin:
     elif request.get('type') == 'control_response' and mode == 'hooks':
         response = request['response']
         expected = cases[next_hook][2]
-        actual = response['response']['permission_decision']
+        payload = response['response']
+        if 'continue' in payload and not isinstance(payload['continue'], bool):
+            raise RuntimeError('native hook schema: continue must be boolean when present')
+        if 'suppressOutput' in payload and not isinstance(payload['suppressOutput'], bool):
+            raise RuntimeError('native hook schema: suppressOutput must be boolean when present')
+        if any(key in payload for key in ('permission_decision', 'permission_decision_reason', 'updated_input')):
+            raise RuntimeError('native hook schema: permission output must stay nested and camelCase')
+        if set(payload) != {'hookSpecificOutput'}:
+            raise RuntimeError('V3 hook output must omit all absent optional controls')
+        specific = payload['hookSpecificOutput']
+        if specific.get('hookEventName') != 'PreToolUse':
+            raise RuntimeError('native hook schema: required PreToolUse event is missing')
+        actual = specific['permissionDecision']
         with (root/'fixture-policy.jsonl').open('a') as log:
-            log.write(json.dumps({'requestId':response['request_id'],'actual':actual,'expected':expected})+'\n')
+            log.write(json.dumps({'requestId':response['request_id'],'actual':actual,'expected':expected,'wire':payload})+'\n')
         if actual != expected: raise RuntimeError(f'policy mismatch {actual} != {expected}')
         next_hook += 1
         if next_hook == len(cases): finish()

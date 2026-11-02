@@ -1,8 +1,8 @@
 # Native coverage runner checkpoint
 
 The first native attempt failed required hook enforcement and was stopped.
-Native retry is held for the owning SDK serialization repair and a new exact
-coordinator review. Owner dollar approval remains recorded separately. The
+The owning SDK serialization repair is consumed. Native retry is held for a
+new exact coordinator review and actual denial/application verification. Owner dollar approval remains recorded separately. The
 deterministic preparation checkpoint below does not establish native deny behavior.
 
 The installed composition uses Client source `af67b38`, SDK `f1d6875`, Journal
@@ -66,3 +66,19 @@ A strict subprocess regression now targets the native nested permission envelope
 and rejects null required booleans. V3 owns its callback configuration; the SDK
 owner owns serializing HookOutput onto the native wire. A retry requires the exact
 repaired artifact, applicable gates and a new named coordinator review.
+
+## SDK repair consumption
+
+The owning SDK repair retains the public HookOutput API and serializes its nested
+native permission fields directly, omitting absent controls. V3 retains its
+original callback builder; the continue-only diagnostic was never a native fix.
+The strict subprocess regression rejects the previous null/flattened wire and
+passes with the exact repaired SDK artifact. Original failure bytes and all prior
+runtime selections remain unchanged. Actual native denial/application behavior
+still requires the next counted, separately reviewed coverage attempt.
+
+Selected repaired SDK source is `2f31aff8b85bdcdbe5c55b6a675102a24291285e`;
+JAR SHA256 is `e995eeb0fb6c75797f1b06e76304b6e3a495ef5b4da37d11e92aa3f362b8e35a`.
+Full V3 offline verification again passes 29 Java and nine Python tests against
+that exact artifact. The stricter fixture includes both emitted allow/deny results
+and omission of every absent optional control from V3's unchanged callback.
