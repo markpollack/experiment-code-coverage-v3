@@ -199,3 +199,14 @@ followed by forced verifier failure must retain the actual response/identity and
 observed cleanup while preserving failure and absence of invocation output.
 Journal's owning normalization repair and a new named review are still required
 before another counted native attempt.
+
+The implemented custody projection records RETURNED/THREW/NOT_OBSERVED explicitly
+and uses create-new or identical-byte retention. A conflicting existing file is
+left intact, with the custody error recorded beside the original attempt failure.
+Four targeted actual-Client/Workflow checks pass: successful response followed by
+forced archive rejection, result retrieval failure, conflicting custody after
+confirmed cleanup, and an unsettled observation with honest missing termination.
+The latter fixture retains a 25 ms observation timeout with a separate two-second
+cleanup allowance so evidence writing does not race its artificial 100 ms limit.
+Production cleanup remains 15 seconds. Final full gates use the next exact repaired
+dependency composition before any third-run review.

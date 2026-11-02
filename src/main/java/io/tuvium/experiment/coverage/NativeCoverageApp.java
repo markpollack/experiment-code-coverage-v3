@@ -109,7 +109,7 @@ public final class NativeCoverageApp {
             throw new IllegalStateException("Native attempt incomplete; preserve raw attempt and never replay implicitly");
     }
 
-    static final class Invoke implements Step<Prepared,Invoked> {
+    static class Invoke implements Step<Prepared,Invoked> {
         AsyncClientInvocationService service;
         final AtomicReference<AgentExecution> active; final Path evidence, ledger; final Instant outerDeadline;
         final CoverageEditPolicy.Snapshot initial;
@@ -120,6 +120,7 @@ public final class NativeCoverageApp {
             long start=System.nanoTime();
             AsyncClientInvocationService.StartedExecution started=null;
             ExecutionTermination termination=null; Attempt attempt=null; Exception failure=null;
+            NativeAttemptCustody.ObservedResponse observedResponse=null;
             try {
                 long budget=Math.min(900000,CoverageAgentInvoker.providerBudget(context.deadline()));
                 attempt=new Attempt(prepared.item().identity(),UUID.randomUUID().toString(),context.runId(),
@@ -140,31 +141,38 @@ public final class NativeCoverageApp {
                 started=service.start(attempt,Path.of(prepared.item().workspace()),prepared.expandedPrompt(),Duration.ofMillis(budget));
                 var handle=started.execution(); active.set(handle);
                 AgentClientResponse response=null; Exception responseFailure=null;
-                try {response=handle.result();} catch (Exception responseError) {responseFailure=responseError;}
+                try {response=handle.result();observedResponse=NativeAttemptCustody.returned(started,response);}
+                catch (Exception responseError) {responseFailure=responseError;observedResponse=NativeAttemptCustody.threw(started,responseError);}
                 termination=handle.awaitTermination(NativeCoverageClient.CLEANUP_LIMIT);
                 long recordingDeadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(35);
                 while (!(handle.recording().delivery() instanceof TerminalDelivery.Completed)
                         && !(handle.recording().delivery() instanceof TerminalDelivery.Failed)
                         && System.nanoTime()<recordingDeadline && Instant.now().isBefore(outerDeadline)) Thread.sleep(10);
                 if(responseFailure!=null) throw responseFailure;
+                NativeAttemptCustody.retainResponse(evidence.resolve("observed-client-response.json"),observedResponse);
                 if(response==null || !response.isSuccessful()) throw new IllegalStateException("Native response unsuccessful");
                 if(!(handle.recording().delivery() instanceof TerminalDelivery.Completed completed))
                     throw new IllegalStateException("Native recording incomplete");
                 Path events=selectPrepared(evidence.resolve("journal"),completed.bindingId(),handle.executionId(),started.decision().orElseThrow().decisionId());
-                var invocation=NativeClientInvocation.accept(started,termination,evidence.resolve("sources").resolve(handle.executionId()).resolve("acquisition.json"),
-                        evidence.resolve("journal/native-"+handle.executionId()),events,budget,TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-start));
+                var invocation=accept(started,termination,events,budget,TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-start));
                 var invoked=new Invoked(prepared,invocation);CoverageEvidence.write(evidence.resolve("invoked.json"),invoked);return invoked;
             } catch (Exception problem) {
                 failure=problem;
                 throw new IllegalStateException("Native coverage invocation failed",problem);
             } finally {
                 if(attempt!=null && Files.exists(evidence.resolve("submission.json"))) try {
-                    NativeAttemptCustody.retain(evidence.resolve("native-attempt.json"),attempt,started,termination,failure);
+                    NativeAttemptCustody.retain(evidence.resolve("native-attempt.json"),attempt,started,termination,observedResponse,failure);
                 } catch(Exception custodyFailure) {
                     if(failure!=null) failure.addSuppressed(custodyFailure);
                     else throw new IllegalStateException("Native attempt custody failed",custodyFailure);
                 }
             }
+        }
+        Invocation accept(AsyncClientInvocationService.StartedExecution started, ExecutionTermination termination,
+                Path events, long budget, long elapsed) throws Exception {
+            String execution=started.execution().executionId();
+            return NativeClientInvocation.accept(started,termination,evidence.resolve("sources").resolve(execution).resolve("acquisition.json"),
+                    evidence.resolve("journal/native-"+execution),events,budget,elapsed);
         }
     }
     static Path selectPrepared(Path journal,String binding,String execution,String decision) throws Exception {

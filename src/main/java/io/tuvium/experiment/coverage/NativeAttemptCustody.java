@@ -3,18 +3,57 @@ package io.tuvium.experiment.coverage;
 import io.github.markpollack.agents.client.*;
 import io.github.markpollack.experiment.runtime.AsyncClientInvocationService;
 import io.github.markpollack.experiment.runtime.AgentRecords.Attempt;
-import java.nio.file.Path;
+import java.io.IOException;
+import java.nio.file.*;
+import java.time.Instant;
 import java.util.*;
 
 /** Nonwaiting observations of the original handle on successful and exceptional returns. */
 final class NativeAttemptCustody {
+    record ObservedResponse(String observation, String observedAt, Attempt attempt,
+            String executionId, String sessionId, String decisionId, Boolean successful,
+            String resultText, String error) {}
+
+    static ObservedResponse returned(AsyncClientInvocationService.StartedExecution started, AgentClientResponse response) {
+        return response(started,"RETURNED",response.isSuccessful(),response.getResult(),null);
+    }
+    static ObservedResponse threw(AsyncClientInvocationService.StartedExecution started, Exception failure) {
+        return response(started,"THREW",null,null,failure.toString());
+    }
+    private static ObservedResponse response(AsyncClientInvocationService.StartedExecution started,
+            String observation, Boolean successful, String text, String error) {
+        String decisionId=null;
+        try {decisionId=started.decision().map(ExecutionDecision::decisionId).orElse(null);}
+        catch(RuntimeException unavailable) {error=(error==null?"":error+"; ")+"Decision observation failed: "+unavailable;}
+        return new ObservedResponse(observation,Instant.now().toString(),started.attempt(),
+                started.execution().executionId(),started.execution().sessionId(),
+                decisionId,successful,text,error);
+    }
+    static void retainResponse(Path file, ObservedResponse response) throws IOException {
+        byte[] bytes=CoverageEvidence.JSON.writerWithDefaultPrettyPrinter().writeValueAsBytes(response);
+        try {Files.write(file,bytes,StandardOpenOption.CREATE_NEW);}
+        catch(FileAlreadyExistsException exists) {
+            if(!Arrays.equals(bytes,Files.readAllBytes(file))) throw new IOException("Conflicting observed response custody: "+file,exists);
+        }
+    }
     static void retain(Path file, Attempt attempt, AsyncClientInvocationService.StartedExecution started,
             ExecutionTermination termination, Exception failure) throws Exception {
+        retain(file,attempt,started,termination,null,failure);
+    }
+    static void retain(Path file, Attempt attempt, AsyncClientInvocationService.StartedExecution started,
+            ExecutionTermination termination, ObservedResponse response, Exception failure) throws Exception {
         var row=new LinkedHashMap<String,Object>();
         row.put("attempt",attempt); row.put("handleAvailable",started!=null);
         row.put("failure",failure==null?"":failure.toString());
         row.put("terminationState",termination==null?"NOT_OBSERVED":"OBSERVED");
         row.put("termination",termination==null?null:termination(termination));
+        var observed=response==null?new ObservedResponse("NOT_OBSERVED",null,attempt,
+                started==null?null:started.execution().executionId(),started==null?null:started.execution().sessionId(),
+                null,null,null,null):response;
+        row.put("observedResponse",observed);
+        IOException responseCustodyFailure=null;
+        try {retainResponse(file.resolveSibling("observed-client-response.json"),observed);}
+        catch(IOException error) {responseCustodyFailure=error;row.put("responseCustodyError",error.toString());}
         if(started!=null) {
             var handle=started.execution();
             row.put("executionId",handle.executionId()); row.put("sessionId",handle.sessionId());
@@ -29,6 +68,7 @@ final class NativeAttemptCustody {
             catch(RuntimeException error) {row.put("associationObservationError",error.toString());}
         }
         CoverageEvidence.write(file,row);
+        if(responseCustodyFailure!=null) throw responseCustodyFailure;
     }
     private static Map<String,Object> decision(ExecutionDecision actual) {
         var value=new LinkedHashMap<String,Object>();

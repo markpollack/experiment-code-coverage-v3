@@ -27,7 +27,8 @@ class NativeAttemptCustodyTest {
             };}
             public void close() { }
         };
-        try(var client=AgentClient.builder(provider).cleanupTimeout(Duration.ofMillis(100)).build()) {
+        // The 25 ms observation below must time out; leave time to retain evidence before releasing the fixture.
+        try(var client=AgentClient.builder(provider).cleanupTimeout(Duration.ofSeconds(2)).build()) {
             var attempt=new Attempt(Identity.of("run","item","simple",0),"invocation","workflow","step","physical",1);
             var started=new AsyncClientInvocationService(client).start(attempt,root,"fixture",Duration.ofSeconds(5));
             try {
