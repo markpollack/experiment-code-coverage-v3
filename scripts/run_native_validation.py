@@ -34,6 +34,9 @@ def verified_manifest(path):
         if (not approval.get('reference') or approval.get('maxUsdPerAttempt', 0) < 5
                 or not 1 <= approval.get('maxCoverageAttempts', 0) <= 6):
             raise ValueError('Actual Owner dollar approval must cover this USD 5 capped launch')
+        ledger = json.loads(Path(data['attemptLedger']).read_text())
+        if len(ledger['attempts']) >= approval['maxCoverageAttempts']:
+            raise ValueError('Owner-approved cumulative coverage submission allowance is exhausted')
     selected = {}
     for ref in data['files']:
         file = Path(ref['path']).resolve(strict=True)
@@ -44,9 +47,11 @@ def verified_manifest(path):
         for path in data[key]:
             if str(Path(path).resolve(strict=True)) not in selected:
                 raise ValueError('Unhashed classpath entry: ' + path)
-    for key in ('claudeExecutable', 'actPython', 'readerSource', 'mappingScript'):
+    for key in ('claudeExecutable', 'actPython', 'readerSource', 'mappingScript', 'javaExecutable', 'timeoutExecutable', 'launcherPython'):
         if str(Path(data[key]).resolve(strict=True)) not in selected:
             raise ValueError('Unhashed launch component: ' + key)
+    if str(Path(sys.executable).resolve()) != str(Path(data['launcherPython']).resolve()):
+        raise ValueError('Launch interpreter differs from reviewed binary')
     return data
 
 
@@ -63,13 +68,13 @@ def inside(manifest, root, run_id):
     repo = str(Path(data['mavenRepository']).resolve(strict=True))
     env['MAVEN_ARGS'] = '-Dmaven.repo.local=' + repo
     app = root / 'application'
-    execute(['java', '-Dcoverage.mavenRepo=' + repo, '-cp', os.pathsep.join(data['runtimeClasspath']),
+    execute([data['javaExecutable'], '-Dcoverage.mavenRepo=' + repo, '-cp', os.pathsep.join(data['runtimeClasspath']),
              'io.tuvium.experiment.coverage.NativeCoverageApp', '--project-root', data['projectRoot'],
              '--output-dir', str(app), '--run-id', run_id, '--attempt-ledger', data['attemptLedger'],
              '--claude-executable', data['claudeExecutable'], '--outer-deadline', env['V3_SOFT_DEADLINE_EPOCH_MS']],
             root / 'application.log', env)
     reader = root / 'independent-reader'
-    execute(['java', '--class-path', os.pathsep.join(data['readerClasspath']), data['readerSource'],
+    execute([data['javaExecutable'], '--class-path', os.pathsep.join(data['readerClasspath']), data['readerSource'],
              str(app / 'results'), run_id, str(reader)], root / 'independent-reader.log', env)
     # Mapping has no provider/native parser. ACT owns canonical populations and accounting.
     encoded = base64.urlsafe_b64encode(run_id.encode()).decode().rstrip('=')
@@ -106,7 +111,7 @@ def main():
     env = os.environ.copy()
     env['V3_SOFT_DEADLINE_EPOCH_MS'] = str(int((time.time() + SOFT_SECONDS) * 1000))
     started = time.monotonic()
-    command = ['timeout', '--signal=TERM', '--kill-after=' + str(HARD_GRACE_SECONDS) + 's', str(SOFT_SECONDS) + 's',
+    command = [data['timeoutExecutable'], '--signal=TERM', '--kill-after=' + str(HARD_GRACE_SECONDS) + 's', str(SOFT_SECONDS) + 's',
                sys.executable, str(Path(__file__).resolve()), '--inside', '--manifest', str(manifest),
                '--output-dir', str(root), '--run-id', args.run_id]
     with (root / 'pipeline.log').open('x') as log:
