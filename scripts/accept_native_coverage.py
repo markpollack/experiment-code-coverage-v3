@@ -6,6 +6,8 @@ import json
 import math
 import os
 from pathlib import Path
+import subprocess
+import sys
 
 from analyze_fresh import mapping, selected_jury
 
@@ -74,7 +76,22 @@ def jury_verdict(row, result_path, app, evidence):
             "semanticQuality": "NOT_ASSESSED"}
 
 
-def evaluate(root, manifest_path):
+def freeze_receipt_inputs(directory, ledger, script=Path(__file__)):
+    """Retain mutable observations and the exact executable evaluator beside one receipt."""
+    directory.mkdir()
+    refs = []
+    for original, name in ((Path(ledger), "coverage-attempts.json"), (script, "accept_native_coverage.py"),
+                           (script.with_name("analyze_fresh.py"), "analyze_fresh.py")):
+        original = original.resolve(strict=True)
+        target = directory / name
+        data = original.read_bytes()
+        target.write_bytes(data)
+        refs.append({"originalPath": str(original), "snapshotPath": str(target),
+                     "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)})
+    (directory / "provenance.json").write_text(json.dumps({"kind": "v3-acceptance-input-snapshot/1", "files": refs}, indent=2) + "\n")
+
+
+def evaluate(root, manifest_path, snapshot=None):
     root, manifest_path = Path(root).resolve(), Path(manifest_path).resolve()
     app = root / "application"
     evidence, gates, state = Evidence(), {}, {}
@@ -286,7 +303,7 @@ def evaluate(root, manifest_path):
 
     def accounting():
         manifest = state["manifest"]
-        ledger = evidence.json(manifest["attemptLedger"])
+        ledger = evidence.json(Path(snapshot) / "coverage-attempts.json" if snapshot else manifest["attemptLedger"])
         attempts = ledger["attempts"]
         require(ledger["limit"] == 6 and len(attempts) <= 6 and len({a["runId"] for a in attempts}) == len(attempts),
                 "Cumulative attempt allowance/identity differs")
@@ -312,6 +329,10 @@ def evaluate(root, manifest_path):
     outcome = next((s for s in ("CONTRACT_FAILED", "EVIDENCE_INCOMPLETE", "TASK_FAILED") if s in states), "ACCEPTED")
     evidence.read(Path(__file__))
     evidence.read(Path(__file__).with_name("analyze_fresh.py"))
+    if snapshot:
+        provenance = evidence.json(Path(snapshot) / "provenance.json")
+        for ref in provenance["files"]:
+            evidence.read(ref["snapshotPath"], ref["sha256"])
     return {"kind": "v3-native-coverage-acceptance/1", "outcome": outcome,
             "runId": state.get("manifest", {}).get("approvedRunId"), "gates": gates,
             "semanticQuality": "NOT_ASSESSED", "manualChecks": [],
@@ -326,8 +347,18 @@ def main():
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--snapshot", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
-    result = evaluate(args.root, args.manifest)
+    if args.snapshot is None:
+        require(not args.output.exists(), "Refusing existing acceptance receipt")
+        manifest = json.loads(args.manifest.read_text())
+        directory = args.output.absolute().with_suffix(".inputs")
+        freeze_receipt_inputs(directory, manifest["attemptLedger"])
+        command = [sys.executable, str(directory / "accept_native_coverage.py"), "--root", str(args.root),
+                   "--manifest", str(args.manifest), "--output", str(args.output), "--snapshot", str(directory)]
+        raise SystemExit(subprocess.call(command))
+    require(Path(__file__).resolve().parent == args.snapshot.resolve(), "Evaluator must execute its frozen snapshot")
+    result = evaluate(args.root, args.manifest, args.snapshot)
     with args.output.open("x") as stream:
         json.dump(result, stream, indent=2)
         stream.write("\n")

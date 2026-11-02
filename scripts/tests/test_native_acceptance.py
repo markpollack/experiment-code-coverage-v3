@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from accept_native_coverage import Evidence, GateError, evaluate, jury_verdict
+from accept_native_coverage import Evidence, GateError, evaluate, freeze_receipt_inputs, jury_verdict
 
 
 class NativeAcceptanceTest(unittest.TestCase):
@@ -50,6 +50,25 @@ class NativeAcceptanceTest(unittest.TestCase):
             self.assertEqual(10, len(receipt["gates"]))
             self.assertFalse((root / "missing-run").exists())
             self.assertTrue(all(gate["state"] == "EVIDENCE_INCOMPLETE" for gate in receipt["gates"].values()))
+
+    def test_receipt_snapshots_survive_later_ledger_and_source_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            live = root / "live"
+            live.mkdir()
+            ledger = live / "ledger.json"
+            ledger.write_text('{"attempts": [{"runId": "one"}]}')
+            script = live / "accept_native_coverage.py"
+            script.write_text("original evaluator\n")
+            script.with_name("analyze_fresh.py").write_text("original mapping\n")
+            snapshot = root / "receipt.inputs"
+            freeze_receipt_inputs(snapshot, ledger, script)
+            ledger.write_text('{"attempts": [{"runId": "one"}, {"runId": "two"}]}')
+            script.write_text("later evaluator\n")
+            script.with_name("analyze_fresh.py").write_text("later mapping\n")
+            for ref in json.loads((snapshot / "provenance.json").read_text())["files"]:
+                Evidence().read(ref["snapshotPath"], ref["sha256"])
+            self.assertEqual(1, len(json.loads((snapshot / "coverage-attempts.json").read_text())["attempts"]))
 
 
 if __name__ == "__main__":

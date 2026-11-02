@@ -31,8 +31,14 @@ Native denial checks use authored source tool results and the final denial
 population, excluding embedded request copies. A reported terminal charge remains
 unqualified until the separate source/assembly reader accepts the archive.
 
-All thirteen Python checks pass, including full-Jury failure despite passing
+All fourteen Python checks pass, including full-Jury failure despite passing
 individual judgments, missing evidence and changed required bytes. The evaluator
 also rejects the retained full-pipeline fixture's actual failed Jury. Its first
 native receipt reports EVIDENCE_INCOMPLETE with the original failed Workflow and
 missing archive/Jury/ACT gates preserved. No Java or frozen launch artifact changes.
+
+Each invocation freezes the observed cumulative ledger and both evaluator scripts
+into a new receipt-owned input directory, records their original paths/hashes, and
+executes the copied evaluator. Later reservations and source edits therefore leave
+those historical references valid. A control changes a separate live ledger and
+both source files after freezing, then verifies the retained inputs still match.
