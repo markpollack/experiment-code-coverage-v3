@@ -37,6 +37,9 @@ def verified_manifest(path):
         ledger = json.loads(Path(data['attemptLedger']).read_text())
         if len(ledger['attempts']) >= approval['maxCoverageAttempts']:
             raise ValueError('Owner-approved cumulative coverage submission allowance is exhausted')
+        review = data.get('prelaunchReview')
+        if not isinstance(review, dict) or review.get('status') != 'ACCEPTED' or not review.get('reference'):
+            raise ValueError('Named coordinator technical review has not accepted this launch')
     selected = {}
     for ref in data['files']:
         file = Path(ref['path']).resolve(strict=True)
@@ -64,6 +67,8 @@ def execute(argv, log, env):
 
 def inside(manifest, root, run_id):
     data = verified_manifest(manifest)
+    if data['mode'] == 'NATIVE' and data.get('approvedRunId') != run_id:
+        raise ValueError('Native run identity differs from reviewed launch')
     env = os.environ.copy()
     repo = str(Path(data['mavenRepository']).resolve(strict=True))
     env['MAVEN_ARGS'] = '-Dmaven.repo.local=' + repo
@@ -104,6 +109,8 @@ def main():
         inside(manifest, root, args.run_id)
         return
     data = verified_manifest(manifest)
+    if data['mode'] == 'NATIVE' and data.get('approvedRunId') != args.run_id:
+        raise ValueError('Native run identity differs from reviewed launch')
     root.mkdir()
     write(root / 'launch-review.json', {'manifest': str(manifest), 'sha256': sha(manifest),
           'review': data['prelaunchReview'], 'runId': args.run_id, 'softSeconds': SOFT_SECONDS,

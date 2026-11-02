@@ -26,6 +26,9 @@ class NativeLaunchTest(unittest.TestCase):
             manifest.write_text(json.dumps(data))
             with self.assertRaisesRegex(ValueError, 'allowance is exhausted'):
                 module.verified_manifest(manifest)
+            ledger.write_text(json.dumps({'attempts': []}))
+            with self.assertRaisesRegex(ValueError, 'technical review has not accepted'):
+                module.verified_manifest(manifest)
 
 
 if __name__ == '__main__':

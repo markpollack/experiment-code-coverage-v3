@@ -1,8 +1,8 @@
 # Native coverage runner checkpoint
 
 The bounded native path is implemented and deterministically exercised. Native
-submission remains pending coordinator technical acceptance and explicit Owner
-dollar approval. Proposed technical caps alone are not spend authorization.
+submission remains pending coordinator technical acceptance. Explicit Owner
+dollar approval is recorded separately; proposed caps alone are not authorization.
 
 The installed composition uses Client source `af67b38`, SDK `f1d6875`, Journal
 `871011a`, Experiment `80ab773`, released Workflow 0.14.0 and Judge 0.18.0, plus the
