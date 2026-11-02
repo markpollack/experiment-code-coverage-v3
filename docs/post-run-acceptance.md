@@ -22,3 +22,17 @@ Checks that cannot be automated from retained outputs are named as manual and
 cannot silently make the overall result green. The coordinator still reviews the
 final evidence and controls any later counted attempt. This is a V3 domain receipt,
 not another orchestration framework or Portfolio evidence ledger.
+
+The implemented entry point is `scripts/accept_native_coverage.py --root <run>
+--manifest <reviewed-manifest> --output <new-receipt>`. It reads retained evidence,
+refuses to overwrite an existing receipt, and exits nonzero for every incomplete
+or failed result. Ten separate gates retain input hashes and precise reasons.
+Native denial checks use authored source tool results and the final denial
+population, excluding embedded request copies. A reported terminal charge remains
+unqualified until the separate source/assembly reader accepts the archive.
+
+All thirteen Python checks pass, including full-Jury failure despite passing
+individual judgments, missing evidence and changed required bytes. The evaluator
+also rejects the retained full-pipeline fixture's actual failed Jury. Its first
+native receipt reports EVIDENCE_INCOMPLETE with the original failed Workflow and
+missing archive/Jury/ACT gates preserved. No Java or frozen launch artifact changes.
