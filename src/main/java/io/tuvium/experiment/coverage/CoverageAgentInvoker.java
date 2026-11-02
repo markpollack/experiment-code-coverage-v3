@@ -69,18 +69,23 @@ public final class CoverageAgentInvoker {
         }
         private Measured executeChecked(StepContext context,Invoked invoked) throws Exception {
             if(!invoked.outcome().workspaceState().equals("RETAINED")) throw new IllegalStateException("Quarantined workspace");
-            Path root=Path.of(invoked.prepared().task().evidenceRoot()), ws=Path.of(invoked.prepared().item().workspace());
-            var build=CoverageEvidence.build(ws,root.resolve("domain"),"final",CoverageEvidence.remaining(context.deadline(),MEASUREMENT_RESERVE_MS),"clean","test","jacoco:report");
-            var artifacts=new ArrayList<FileRef>(invoked.prepared().item().artifacts()); artifacts.add(build.log());
-            var metrics=new ArrayList<Measurement>();
-            metrics.add(Measurement.measured("finalBuildExitCode","exit-code",build.exitCode(),build.log().path(),invoked.prepared().item().identity().launchKey()));
-            if(build.passed()) {
-                var finalCov=CoverageEvidence.read(ws.resolve("target/site/jacoco/jacoco.xml"),root.resolve("domain/final.xml"));
-                artifacts.add(finalCov.report()); metrics.addAll(CoverageEvidence.metrics(finalCov,invoked.prepared().item().identity().launchKey()));
-            } else metrics.add(Measurement.unknown("lineCoverage","percent",build.timedOut()?"Final measurement timeout":"Final tests failed",invoked.prepared().item().identity().launchKey()));
-            var measured=new Measured(invoked,new Domain(metrics,artifacts));
-            CoverageEvidence.write(root.resolve("measured.json"),measured);
+            var measured=new Measured(invoked,measure(invoked.prepared(),context.deadline()));
+            CoverageEvidence.write(Path.of(invoked.prepared().task().evidenceRoot()).resolve("measured.json"),measured);
             return measured;
         }
     }
+    /** Shared domain measurement, independent of provider invocation implementation. */
+    static Domain measure(Prepared prepared, Instant deadline) throws Exception {
+            Path root=Path.of(prepared.task().evidenceRoot()), ws=Path.of(prepared.item().workspace());
+            var build=CoverageEvidence.build(ws,root.resolve("domain"),"final",CoverageEvidence.remaining(deadline,MEASUREMENT_RESERVE_MS),"clean","test","jacoco:report");
+            var artifacts=new ArrayList<FileRef>(prepared.item().artifacts()); artifacts.add(build.log());
+            var metrics=new ArrayList<Measurement>();
+            metrics.add(Measurement.measured("finalBuildExitCode","exit-code",build.exitCode(),build.log().path(),prepared.item().identity().launchKey()));
+            if(build.passed()) {
+                var finalCov=CoverageEvidence.read(ws.resolve("target/site/jacoco/jacoco.xml"),root.resolve("domain/final.xml"));
+                artifacts.add(finalCov.report()); metrics.addAll(CoverageEvidence.metrics(finalCov,prepared.item().identity().launchKey()));
+            } else metrics.add(Measurement.unknown("lineCoverage","percent",build.timedOut()?"Final measurement timeout":"Final tests failed",prepared.item().identity().launchKey()));
+            return new Domain(metrics,artifacts);
+    }
+
 }

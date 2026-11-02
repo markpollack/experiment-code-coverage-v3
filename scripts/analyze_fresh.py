@@ -99,9 +99,35 @@ def mapping(result_path, export, reader_receipt, evidence, expected_tool_calls):
     for ref in receipt["verified_files"]:
         if sha(Path(ref["path"])) != ref["sha256"]:
             raise ValueError("Changed independently checked source/canonical artifact")
+    journal_run_uid = attempt["invocationId"]
+    if "journal_run_uid" in receipt:
+        journal_run_uid = receipt["journal_run_uid"]
+        originals = invocation.get("acquisitions", [])
+        if len(originals) != 1:
+            raise ValueError("Native mapping needs exactly one retained acquisition")
+        original = originals[0]
+        source = Path(original["path"])
+        if sha(source) != original["sha256"] or original not in receipt["verified_files"]:
+            raise ValueError("Native acquisition missing from independently verified inputs")
+        manifest = json.loads(source.read_text())
+        if (not manifest.get("complete") or manifest.get("acquisition_uid") != journal_run_uid
+                or manifest.get("run", {}).get("run_uid") != journal_run_uid
+                or not isinstance(journal_run_uid, str) or not journal_run_uid):
+            raise ValueError("Native source/run identity mismatch")
+    mode_path = evidence / "judges/judging-mode.json"
+    deterministic = mode_path.exists()
+    names = {"t0_build", "t1_coverage", "t2_quality"}
+    if deterministic:
+        mode = json.loads(mode_path.read_text())
+        if (mode.get("mode") != "deterministic-coverage-validation/1"
+                or mode.get("semanticQuality") != "NOT_ASSESSED" or mode.get("judgeInferenceCalls") != 0):
+            raise ValueError("Unrecognized deterministic assessment mode")
+        names = {"edit_surface", "t0_build", "t1_coverage"}
     observed = {}
     association, selected, details = selected_jury(row, result_path, evidence)
-    for name in ("t0_build", "t1_coverage", "t2_quality"):
+    if deterministic and ("t2_quality" in selected or association and association["quality_acquisition"] is not None):
+        raise ValueError("Semantic inference is outside deterministic validation")
+    for name in sorted(names):
         path = evidence / "judges" / f"{name}.json"
         if not path.exists():
             continue
@@ -113,7 +139,7 @@ def mapping(result_path, export, reader_receipt, evidence, expected_tool_calls):
         observed[name] = {"status": status, "score": numeric.get("value")}
         details.append({"judge_name": name, "status": status, "judgment": judgment,
                         "source_path": str(path), "source_sha256": sha(path), **association})
-    if set(selected) & {"t0_build", "t1_coverage", "t2_quality"} != set(observed):
+    if set(selected) & names != set(observed):
         raise ValueError("Selected Jury is missing its individual judgment artifacts")
     states = [j["status"] for j in observed.values()]
     conclusion = row["verdicts"][0]["conclusion"] if row["verdicts"] else None
@@ -133,18 +159,22 @@ def mapping(result_path, export, reader_receipt, evidence, expected_tool_calls):
               "response_state": invocation["responseState"], "capture_state": invocation["captureState"],
               "reader_receipt": str(reader_receipt), "reader_receipt_sha256": sha(reader_receipt),
               "experiment_result": str(result_path), "experiment_result_sha256": sha(result_path)}
+    if deterministic:
+        domain.update({"validation_mode": "deterministic-coverage-validation/1",
+                       "semantic_quality": "NOT_ASSESSED", "judge_inference_calls": 0,
+                       "judging_mode_sha256": sha(mode_path)})
     for name, value in observed.items():
         domain[name] = value["score"]
     if domain.get("t2_quality") is not None:
         domain["quality_convergence_met"] = domain["t2_quality"] >= .80
     return {"kind": "act/canonical-inputs", "version": "1", "inputs": [{
         "export_path": str(export), "export_sha256": sha(export),
-        "journal_run_uid": attempt["invocationId"], "run_id": result["experimentId"],
-        "execution_run_id": identity["runId"], "invocation_id": attempt["invocationId"],
+        "journal_run_uid": journal_run_uid, "run_id": result["experimentId"],
+        "execution_run_id": attempt["workflowRunId"] if "journal_run_uid" in receipt else identity["runId"], "invocation_id": attempt["invocationId"],
         "item_id": identity["itemId"], "variant": identity["variant"],
         "replicate_index": identity["replicateIndex"], "attempt_id": attempt["workflowAttemptId"],
         "attempt_index": attempt["attemptNumber"] - 1, "domain": domain, "judge_details": details,
-        "expected_tool_calls": expected_tool_calls}]}
+        **({"expected_tool_calls": expected_tool_calls} if expected_tool_calls is not None else {})}]}
 
 
 def main():
@@ -154,14 +184,17 @@ def main():
     parser.add_argument("--reader-receipt", required=True, type=Path)
     parser.add_argument("--evidence", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--expected-tool-calls", required=True, type=int)
+    parser.add_argument("--expected-tool-calls", type=int)
+    parser.add_argument("--mapping-only", choices=["true"])
     args = parser.parse_args()
     for name in ("result", "export", "reader_receipt", "evidence", "output"):
         setattr(args, name, getattr(args, name).resolve())
     inputs = mapping(args.result, args.export, args.reader_receipt, args.evidence, args.expected_tool_calls)
-    inputs_path = args.output.with_name(args.output.name + "-inputs.json")
+    inputs_path = args.output if args.mapping_only else args.output.with_name(args.output.name + "-inputs.json")
     with inputs_path.open("x") as stream:
         json.dump(inputs, stream, indent=2)
+    if args.mapping_only:
+        return
     from agent_control_theory.canonical import analyze_inputs
     # Use owning ACT's default provisional full-command classifier for first vertical proof.
     analyze_inputs(inputs_path, args.output)

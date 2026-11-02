@@ -147,3 +147,19 @@ Maven command to the selected copied cache without changing pinned task bytes or
 shared configuration. Native response accounting remains UNKNOWN until supported
 by qualified scoped terminal/source/ACT evidence. Each submission reserves the
 USD 5 enforced cap; an unknown actual cost is never reported as zero.
+
+The native domain path reuses baseline/final measurement logic while keeping the
+native Invocation separate from the historical blocking service. ACT mapping
+retains the actual Client source run UID, Experiment invocation ID and Workflow
+run/attempt IDs as distinct identities. Its deterministic verdict includes edit
+integrity/build/coverage and semantic NOT_ASSESSED. The separate reader source
+reopens immutable Experiment/Jury storage and runs full Journal acquisition and
+assembly verification before exporting canonical inputs; its classpath excludes
+the V3 application, Client, SDK and Journal writer.
+
+A coordinator-selected private ledger reserves each native submission before
+admission and refuses duplicate run identities or a seventh reservation. An
+uncertain admission remains counted. The launch wrapper applies a 1785-second
+soft deadline plus at most 15 seconds of termination grace, keeping the hard
+campaign bound at 1800 seconds across application, readback and ACT. It creates
+only the fresh campaign process group and does not target unrelated processes.
