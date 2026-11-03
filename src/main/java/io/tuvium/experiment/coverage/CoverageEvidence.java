@@ -30,17 +30,29 @@ public final class CoverageEvidence {
         if (Files.exists(log)) throw new IOException("Refusing build evidence overwrite");
         var command = new ArrayList<String>();
         command.add(workspace.resolve("mvnw").toString());
-        command.add("-B"); command.add("-ntp");
+        boolean candidate=Boolean.getBoolean("coverage.candidateBuild");
+        if(!candidate){command.add("-B"); command.add("-ntp");
         command.add("-Dmaven.repo.local=" + System.getProperty("coverage.mavenRepo"));
-        command.add("-Dspring-javaformat.skip=true"); command.addAll(List.of(goals));
+        command.add("-Dspring-javaformat.skip=true");}
+        command.addAll(List.of(goals));
         write(evidence.resolve(name + "-command.json"), Map.of("argv",command,"budgetMs",budgetMs,"workspace",workspace.toString()));
         long start=System.nanoTime();
-        Process process = new ProcessBuilder(command).directory(workspace.toFile()).redirectErrorStream(true).redirectOutput(log.toFile()).start();
+        var builder=new ProcessBuilder(command).directory(workspace.toFile()).redirectErrorStream(true).redirectOutput(log.toFile());
+        if(candidate) {
+            var environment=builder.environment();environment.clear();
+            Path home=Files.createDirectories(evidence.resolve("build-home"));
+            environment.put("HOME",home.toString());environment.put("PATH","/usr/bin:/bin");
+            environment.put("JAVA_HOME",System.getProperty("java.home"));environment.put("LANG","C.UTF-8");
+            environment.put("MAVEN_ARGS","-o -Dmaven.repo.local="+System.getProperty("coverage.mavenRepo")+" -Dspring-javaformat.skip=true");
+            environment.put("MAVEN_OPTS","-Duser.home="+home);
+            environment.put("MAVEN_USER_HOME",System.getProperty("coverage.mavenRepo")+"/maven-user-home");
+        }
+        Process process = builder.start();
         boolean done=process.waitFor(budgetMs,TimeUnit.MILLISECONDS);
         if (!done) {
             var children=process.descendants().toList();
             children.forEach(ProcessHandle::destroy); process.destroy();
-            process.waitFor(2000,TimeUnit.MILLISECONDS);
+            process.waitFor(candidate?15000:2000,TimeUnit.MILLISECONDS);
             children.stream().filter(ProcessHandle::isAlive).forEach(ProcessHandle::destroyForcibly);
             if (process.isAlive()) process.destroyForcibly();
             process.waitFor(2000,TimeUnit.MILLISECONDS);

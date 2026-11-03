@@ -1,5 +1,14 @@
 # V3 roadmap
 
+## Active bounded Codex first-live readiness
+
+Owner activated deterministic preparation on November 3. The sole V3 owner accepts
+the launcher, final-inventory patch gate and isolated fresh-copy verification scope.
+Useful pushed checkpoint within 20 active minutes; return at 40 minutes.
+Native activation remains separate and requires the exact reviewed packet.
+See [current design](codex-integration.md#first-live-readiness-policy).
+
+
 ## Returned deterministic Codex consumer integration
 
 The scoped consumer implementation and installed deterministic verification have

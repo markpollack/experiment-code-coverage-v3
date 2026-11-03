@@ -213,3 +213,22 @@ private packet records these holds; no executable native launch is offered.
 Existing native opener and launcher refusals remain in place. Client remains
 paused with no demonstrated Client-owned gap. This bounded grant returns with
 zero native V3 submissions and no running command.
+
+## First-live readiness policy
+
+The owner accepts the deterministic first-live readiness assignment. The candidate
+policy supersedes the earlier native edit-projector dependency for this first run.
+It accepts only the final complete inventory and test-only patch, followed by
+a fresh pinned-copy build. Original same-execution Journal archive qualification
+remains mandatory. Command projection is diagnostic; no general shell, heredoc or
+native edit interpretation is claimed. Independently established contrary effects
+still reject. The Claude preventive policy is unchanged.
+
+Implement a distinct exact-manifest/Owner-activation native entry with an exclusive
+one-submission reservation. Use the installed producer closure and existing
+subscription selection, with no API-key fallback. Keep subject and verification
+Maven caches separate from original caches; build outputs are excluded from the
+authored patch and cache roots survive clean. Submitted tests execute as the harness
+user unless an existing restricted environment is demonstrated. Environmental
+credential removal is not filesystem confinement. Exact limitations return for
+Owner decision. No live task is authorized by this preparation disposition.

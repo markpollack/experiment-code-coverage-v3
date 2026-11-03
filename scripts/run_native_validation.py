@@ -25,6 +25,15 @@ def write(path, value):
 
 def verified_manifest(path):
     data = json.loads(path.read_text())
+    if data.get('kind') == 'v3-codex-first-launch/1':
+        import run_codex_candidate
+        run_codex_candidate.validate(data)
+        reservation = json.loads((Path(data['outputDirectory']) / 'candidate-reservation.json').read_text())
+        if reservation.get('manifestSha256') != sha(path) or reservation.get('runId') != data['runId']:
+            raise ValueError('Exact guard reservation required')
+        data['candidateMode'] = 'fixture' if data['mode'] == 'FIXTURE' else 'native'
+        data['mode'] = 'CODEX_CANDIDATE'
+        return data
     if data.get('kind') != 'v3-native-coverage-launch/1' or not data.get('prelaunchReview'):
         raise ValueError('Named coordinator prelaunch review is required')
     if data.get('mode') not in ('NATIVE', 'SYNTHETIC_FIXTURE'):
@@ -80,11 +89,13 @@ def inside(manifest, root, run_id):
         raise ValueError('Native run identity differs from reviewed launch')
     env = os.environ.copy()
     repo = str(Path(data['mavenRepository']).resolve(strict=True))
-    env['MAVEN_ARGS'] = '-Dmaven.repo.local=' + repo
+    if not data.get('candidateMode'):
+        env['MAVEN_ARGS'] = '-Dmaven.repo.local=' + repo
     app = root / 'application'
-    provider_args = (['--codex-executable', data['codexExecutable'], '--codex-fixture-mode', data['fixtureMode']]
+    provider_args = (['--codex-executable',data['codexExecutable'],'--codex-candidate-mode',data['candidateMode']]
+                     if data.get('candidateMode') else ['--codex-executable', data['codexExecutable'], '--codex-fixture-mode', data['fixtureMode']]
                      if data.get('provider') == 'CODEX' else ['--claude-executable', data['claudeExecutable']])
-    execute([data['javaExecutable'], '-Dcoverage.mavenRepo=' + repo, '-cp', os.pathsep.join(data['runtimeClasspath']),
+    execute([data['javaExecutable'], '-Dcoverage.mavenRepo=' + repo, *(['-Dcoverage.candidatePython='+data['launcherPython'], '-Dcoverage.candidateSurface='+data['candidateSurface'], '-Dcoverage.candidateBuild=true', '-Dcoverage.candidateGuard='+data['launcher'], '-Dcoverage.candidateManifest='+str(manifest)] if data.get('candidateMode') else []), '-cp', os.pathsep.join(data['runtimeClasspath']),
              'io.tuvium.experiment.coverage.NativeCoverageApp', '--project-root', data['projectRoot'],
              '--output-dir', str(app), '--run-id', run_id, '--attempt-ledger', data['attemptLedger'],
              '--outer-deadline', env['V3_SOFT_DEADLINE_EPOCH_MS']] + provider_args,

@@ -23,6 +23,19 @@ public final class CodexCoverageClient {
         throw new UnsupportedOperationException("Codex native V3 policy is unqualified: test-only writes and exact Maven command enforcement required");
     }
 
+    static AgentClient openCandidate(Path workspace, Path evidence, String executable) throws Exception {
+        if (!Files.isRegularFile(evidence.getParent().resolve("candidate-reservation.json")))
+            throw new IllegalStateException("Exact candidate guard reservation required");
+        var provider=CodexClientProvider.builder().codexPath(executable).workingDirectory(workspace)
+                .nativeSessionsDirectory(Path.of(System.getenv("CODEX_HOME"),"sessions"))
+                .acquisitionDirectory(evidence.resolve("sources"),VERSION)
+                .sandbox(io.github.markpollack.agents.codexsdk.types.SandboxMode.WORKSPACE_WRITE).skipGitCheck(true).build();
+        var options=DefaultAgentOptions.builder().workingDirectory(workspace.toString()).model("gpt-6-luna").effort("high").build();
+        return AgentClient.builder(provider).defaultOptions(options).defaultWorkingDirectory(workspace)
+                .defaultTimeout(NativeCoverageClient.SUBJECT_LIMIT).cleanupTimeout(NativeCoverageClient.CLEANUP_LIMIT)
+                .executionRecorder(new Recorder(evidence)).build();
+    }
+
     /** Only the packaged local child can enter this route; a mode label cannot admit a native CLI. */
     public static AgentClient openFixture(Path workspace, Path evidence, String executable, String mode) throws Exception {
         return openFixture(workspace,evidence,executable,mode,false);
