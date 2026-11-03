@@ -86,7 +86,7 @@ public final class NativeCoverageApp {
                 .register("coverage-native-invoke-v1",invoke).register("coverage-native-measure-v1",measure).build();
         var compatibility=new ExecutionCompatibility("coverage-v3-native",commit,Map.of("launchSha256",Evidence.sha256(evidence.resolve("launch.json"))));
         WorkflowAdapter.Execution execution;
-        try (var client=codexFixture?CodexCoverageClient.openFixture(workspace,evidence,executable.toString(),options.get("--codex-fixture-mode"))
+        try (var client=codexFixture?CodexCoverageClient.openFixture(workspace,evidence,executable.toString(),options.get("--codex-fixture-mode"),true)
                 : NativeCoverageClient.open(workspace,evidence,executable.toString())) {
             invoke.service=new AsyncClientInvocationService(client);
             execution=new WorkflowAdapter().execute(evidence.resolve("workflow"),graph,registry,compatibility,identity,task,

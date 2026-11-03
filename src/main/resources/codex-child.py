@@ -16,6 +16,14 @@ if mode == 'wait':
     (cwd/'waiting').touch()
     time.sleep(60)
     sys.exit(0)
+if os.environ.get('V3_CODEX_TASK_EDITS') == 'true' and mode == 'success':
+    corpus = pathlib.Path(__file__).with_name('codex-petclinic-tests')
+    manifest = json.loads(pathlib.Path(__file__).with_name('codex-petclinic-tests.json').read_text())
+    for entry in manifest['files']:
+        destination = cwd/'src/test'/entry['path']
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with destination.open('xb') as target:
+            target.write((corpus/entry['path']).read_bytes())
 n = str(uuid.uuid4())
 def emit(obj): print(json.dumps(obj), flush=True)
 emit({'type':'thread.started','thread_id':n})

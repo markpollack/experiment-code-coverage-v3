@@ -119,3 +119,32 @@ The first proposal remains one fresh Codex execution; no planner/edit/reviewer
 split. Writable cache/build paths, evidence completeness, actual command policy
 and timeout/cleanup limits must be named in the frozen proposal. Unsupported
 transient-write/escaped-process/dollar/token/internal-turn guarantees stay explicit.
+
+The candidate verifier is `scripts/verify_codex_candidate.py`. Its local tests
+exercise valid changed/new tests, protected tracked edits, untracked protected
+files, symlinks (including under generated output), mode changes, excluded target
+output, incomplete/disallowed operations and changed/nonfresh verification copies.
+The patch transfer rechecks subject hashes before copying and verifies the result.
+The command-observation input must come from a complete independently qualified
+source population in a future native run; its structural fixture checks are not
+that producer proof. Its output always says `nativeAcceptance=false`.
+
+The candidate command vocabulary permits the exact foreground Maven command and
+small read forms (`pwd`, `rg --files [relative-path]`, `cat -- relative-path...`),
+plus observed test-only `apply_patch` paths. Compound/redirection/expansion,
+background actions, unknown tools and missing completion/source occurrence are
+rejected. This is an explicit proposed policy delta from Claude's preventive
+shell restriction, subject to Owner review. It cannot prove no transient write
+or earlier side effect occurred.
+
+For deterministic full-task wiring, the packaged child can apply an explicit six
+file canned test corpus retained from the accepted Claude run. The corpus manifest
+and all six file hashes are checked before execution; those files are copied only
+under the new disposable subject's `src/test`. Original accepted artifacts are
+unchanged. This tests actual edit/measurement/Jury plumbing without claiming Codex
+produced those tests or exercised a native write policy.
+
+After this candidate addition, complete external-export offline verification
+passed 35 Java tests and 23 Python tests. Failed elected results are explicitly
+rejected by Experiment admission before archive access. The full installed
+pipeline and its independent acceptance remain separately recorded.

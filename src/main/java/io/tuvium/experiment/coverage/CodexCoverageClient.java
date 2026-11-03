@@ -25,6 +25,10 @@ public final class CodexCoverageClient {
 
     /** Only the packaged local child can enter this route; a mode label cannot admit a native CLI. */
     public static AgentClient openFixture(Path workspace, Path evidence, String executable, String mode) throws Exception {
+        return openFixture(workspace,evidence,executable,mode,false);
+    }
+
+    static AgentClient openFixture(Path workspace,Path evidence,String executable,String mode,boolean taskEdits) throws Exception {
         if (!Set.of("success", "failed", "wrong").contains(mode)) throw new IllegalArgumentException("Unknown fixture mode");
         try (var fixture = CodexCoverageClient.class.getResourceAsStream("/codex-child.py")) {
             if (fixture == null || !Evidence.sha256(fixture.readAllBytes()).equals(Evidence.sha256(Path.of(executable))))
@@ -34,16 +38,29 @@ public final class CodexCoverageClient {
             if(template==null || !Evidence.sha256(template.readAllBytes()).equals(Evidence.sha256(Path.of(executable).resolveSibling("codex-native-template.jsonl"))))
                 throw new IllegalArgumentException("Fixture native template differs from packaged local template");
         }
+        if(taskEdits) verifyEditCorpus(Path.of(executable).getParent());
         Path sessions = evidence.resolve("codex-sessions");
         var provider = CodexClientProvider.builder().codexPath(executable).workingDirectory(workspace)
                 .nativeSessionsDirectory(sessions).acquisitionDirectory(evidence.resolve("sources"), VERSION)
                 .skipGitCheck(true).build();
         var options = DefaultAgentOptions.builder().workingDirectory(workspace.toString()).model(MODEL).effort("low")
                 .environmentVariables(Map.of("FIXTURE_SESSIONS",sessions.toString(),"V3_CODEX_EVIDENCE",evidence.toString(),
-                        "V3_CODEX_FIXTURE_MODE",mode)).build();
+                        "V3_CODEX_FIXTURE_MODE",mode,"V3_CODEX_TASK_EDITS",Boolean.toString(taskEdits))).build();
         return AgentClient.builder(provider).defaultOptions(options).defaultWorkingDirectory(workspace)
                 .defaultTimeout(NativeCoverageClient.SUBJECT_LIMIT).cleanupTimeout(NativeCoverageClient.CLEANUP_LIMIT)
                 .executionRecorder(new Recorder(evidence)).build();
+    }
+
+    private static void verifyEditCorpus(Path directory) throws Exception {
+        byte[] expected;
+        try(var in=CodexCoverageClient.class.getResourceAsStream("/codex-petclinic-tests.json")) {expected=in.readAllBytes();}
+        if(!Arrays.equals(expected,Files.readAllBytes(directory.resolve("codex-petclinic-tests.json"))))
+            throw new IllegalArgumentException("Canned edit manifest differs");
+        for(var entry:CoverageEvidence.JSON.readTree(expected).required("files")) {
+            String relative=entry.required("path").asText();Path file=directory.resolve("codex-petclinic-tests").resolve(relative);
+            if(!file.toRealPath().equals(file.toAbsolutePath().normalize()) || !Evidence.sha256(file).equals(entry.required("sha256").asText()))
+                throw new IllegalArgumentException("Canned test edit differs: "+relative);
+        }
     }
 
     static Path originalManifest(Path evidence) throws Exception {

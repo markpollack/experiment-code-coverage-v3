@@ -48,7 +48,11 @@ class CodexCoverageClientTest {
                 NativeAttemptCustody.retain(fixture.evidence().resolve("native-attempt.json"),attempt,started,termination,NativeAttemptCustody.returned(started,response),null);
                 assertThat(termination.cleanupConfirmed()).isTrue();assertThat(started.decision().orElseThrow()).isSameAs(decision);
                 assertThat(Files.readString(fixture.evidence().resolve("observed-client-response.json"))).contains(decision.decisionId());
-                if(mode.equals("failed")) assertThat(response.isSuccessful()).isFalse();
+                if(mode.equals("failed")) {
+                    assertThat(response.isSuccessful()).isFalse();
+                    assertThatThrownBy(()->NativeClientInvocation.accept(started,termination,fixture.evidence().resolve("unused"),fixture.evidence().resolve("unused-q"),fixture.evidence().resolve("unused-events"),10000,1000))
+                            .hasMessageContaining("Only elected SUCCESS");
+                }
                 else {assertThat(response.isSuccessful()).isTrue();assertThat(started.execution().recording().delivery()).isInstanceOf(TerminalDelivery.Failed.class);}
             }
         }
