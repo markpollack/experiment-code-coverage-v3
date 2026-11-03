@@ -1,5 +1,23 @@
 # V3 roadmap
 
+## Active deterministic Codex consumer integration
+
+The scoped consumer implementation is accepted for development, local-child tests
+and exact installed verification. Native Codex execution remains unapproved.
+The [Codex integration design](codex-integration.md) owns this slice; prior Claude
+acceptance and task identities remain unchanged.
+
+- Add explicit one-shot Codex selection preserving original Client result and
+  decision, qualified archive binding and Experiment/Workflow identities.
+- Exercise successful, failed-result and rejected-archive local child controls;
+  retain the full deterministic Jury, separate reader and ACT mapping.
+- Return exact selected artifacts and supported controls. Do not equate workspace
+  write access or a post-run diff with the existing test-only/command allowlist.
+- Native execution requires separate acceptance of installed and live archive
+  evidence plus supported bounds. No historical allowance is reused.
+
+## Accepted historical baseline
+
 Current baseline: [main and its consolidation record](current-baseline.md).
 The [bounded housekeeping disposition](house-in-order.md) is complete.
 The [bounded native coverage acceptance](native-coverage-acceptance.md) completes
