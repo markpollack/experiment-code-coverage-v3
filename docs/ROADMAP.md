@@ -1,9 +1,9 @@
 # V3 roadmap
 
-## Active deterministic Codex consumer integration
+## Returned deterministic Codex consumer integration
 
-The scoped consumer implementation is accepted for development, local-child tests
-and exact installed verification. Native Codex execution remains unapproved.
+The scoped consumer implementation and installed deterministic verification have
+returned. Native Codex execution remains NOT_READY and unapproved.
 The [Codex integration design](codex-integration.md) owns this slice; prior Claude
 acceptance and task identities remain unchanged.
 
@@ -16,7 +16,7 @@ acceptance and task identities remain unchanged.
 - Native execution requires separate acceptance of installed and live archive
   evidence plus supported bounds. No historical allowance is reused.
 
-- Active candidate policy: disposable workspace-write plus observed test-only patch
+- Prepared candidate policy: disposable workspace-write plus observed test-only patch
   acceptance, full path/type/mode/symlink inventories and fresh verification copy.
   Candidate observations do not replace the historical preventive policy without
   separate exact-policy acceptance. Native launch remains closed.

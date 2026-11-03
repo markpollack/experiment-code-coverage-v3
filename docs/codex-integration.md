@@ -102,8 +102,8 @@ a fixture result never claims native task acceptance.
 ## Candidate policy disposition
 
 The V3 owner accepts deterministic preparation of a workspace-write candidate.
-It is explicitly different from the prior preventive hook: the sandbox bounds
-the selected workspace while a complete after-inventory and command evidence
+It is explicitly different from the prior preventive hook: the proposed workspace-write sandbox requests a workspace boundary; its effective
+writable roots still need qualification. A complete after-inventory and command evidence
 determine whether the result is acceptable. Test-only intent is an instruction,
 not preventive write enforcement. No native activation follows this disposition.
 
@@ -181,3 +181,35 @@ budget. Its timeout is separate from source-session feedback. Running submitted
 tests executes code as the harness user; a disposable directory is not an OS
 containment guarantee. Any stronger filesystem/network/process isolation needs
 its own selected implementation and verification before it can be claimed.
+
+
+## Bounded deterministic return
+
+The final external-export Java gate passed 35 tests. The final Python suite passed
+31 tests, including retrospective refusal of a second observed feedback build.
+The exact installed composition passed the pinned task through original Client
+and Experiment evidence, Workflow, full deterministic Jury, detached reader and
+all nine ACT tables. This was a canned six-file corpus fixture: 66 tests passed,
+line coverage rose from 64.86486486% to 94.93243243%, and it is not native Codex
+coverage evidence. Installed failed-result and wrong-capture executions were
+refused with original decisions/responses and confirmed cleanup. Independent
+consumer readbacks accepted the same frozen result and original decision.
+
+The candidate patch was transferred into a fresh pinned verification copy. The
+exact foreground command passed 66 tests and retained all 171 non-generated
+inventory entries unchanged. This proves deterministic patch/build handling;
+source-bound native edit projection remains unsupported. The current candidate
+exempts only `target/**`. A proposed `.m2` cache under the subject workspace would
+be protected and changed cache files would refuse acceptance. Cache placement or
+a narrow generated-cache classification is therefore an additional launch
+preparation dependency, not an implicit exemption. Putting the cache under
+`target` is unsuitable because `clean` deletes it.
+
+The policy is ready for a concrete Owner decision on its stated limitations; the
+native launch is **NOT_READY**. Required work is fail-closed native edit evidence,
+the exact candidate entry/activation gate, qualified writable-root/cache handling,
+and separate approval of the resulting exact artifact/policy/manifest. The inert
+private packet records these holds; no executable native launch is offered.
+Existing native opener and launcher refusals remain in place. Client remains
+paused with no demonstrated Client-owned gap. This bounded grant returns with
+zero native V3 submissions and no running command.
