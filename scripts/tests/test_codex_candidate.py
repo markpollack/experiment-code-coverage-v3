@@ -24,9 +24,11 @@ class CandidatePolicyTest(unittest.TestCase):
         shutil.copytree(self.subject, self.verification)
         self.before = m.inventory(self.subject)
         self.evidence = {'kind': 'v3-command-observations/1', 'complete': True,
-                         'sourceSha256': 'synthetic-source-hash', 'operations': [
+                         'sourceSha256': 'a' * 64, 'workspace': str(self.subject.resolve()), 'operations': [
             {'tool': 'exec_command', 'command': m.BUILD, 'background': False,
-             'exitCode': 0, 'sourceId': 'fixture/1', 'complete': True}]}
+             'exitCode': 0, 'sourceId': 'fixture/1', 'complete': True, 'cwd': str(self.subject.resolve())},
+            {'tool': 'apply_patch', 'sourceId': 'fixture/2', 'complete': True, 'cwd': str(self.subject.resolve()),
+             'patch': '*** Begin Patch\n*** Update File: src/test/ExistingTest.java\n*** Add File: src/test/NewTest.java\n*** End Patch'}]}
 
     def check(self):
         return m.validate(self.before, m.inventory(self.subject), self.evidence)
@@ -84,9 +86,24 @@ class CandidatePolicyTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'completion evidence'):
             self.check()
 
+    def test_empty_operation_population_foreign_cwd_and_invalid_digest_rejected(self):
+        (self.subject / 'src/test/NewTest.java').write_text('new')
+        evidence = copy.deepcopy(self.evidence)
+        evidence['operations'] = []
+        with self.assertRaisesRegex(ValueError, 'requires operation evidence'):
+            m.validate(self.before, m.inventory(self.subject), evidence)
+        evidence = copy.deepcopy(self.evidence)
+        evidence['sourceSha256'] = 'not-a-source-digest'
+        with self.assertRaisesRegex(ValueError, 'SHA256 digest'):
+            m.validate(self.before, m.inventory(self.subject), evidence)
+        evidence = copy.deepcopy(self.evidence)
+        evidence['operations'][0]['cwd'] = '/outside'
+        with self.assertRaisesRegex(ValueError, 'working directory'):
+            m.validate(self.before, m.inventory(self.subject), evidence)
+
     def test_test_patch_observation_rejects_protected_patch_paths(self):
         self.evidence['operations'] = [{'tool': 'apply_patch', 'sourceId': 'fixture/2',
-            'complete': True, 'patch': '*** Begin Patch\n*** Add File: src/test/NewTest.java\n+test\n*** End Patch'}]
+            'complete': True, 'cwd': str(self.subject.resolve()), 'patch': '*** Begin Patch\n*** Add File: src/test/NewTest.java\n+test\n*** End Patch'}]
         self.check()
         self.evidence['operations'][0]['patch'] = '*** Begin Patch\n*** Add File: pom.xml\n+x\n*** End Patch'
         with self.assertRaisesRegex(ValueError, 'patch path'):

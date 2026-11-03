@@ -6,6 +6,7 @@ import os
 from pathlib import Path, PurePosixPath
 import shlex
 import shutil
+import importlib.util
 import stat
 
 BUILD = './mvnw clean test jacoco:report'
@@ -33,7 +34,7 @@ def inventory(root):
             else:
                 item.update(type='special')
             entries[relative] = item
-    return {'kind': 'v3-path-inventory/1', 'entries': entries}
+    return {'kind': 'v3-path-inventory/1', 'root': str(root), 'entries': entries}
 
 
 def is_test(path):
@@ -49,13 +50,26 @@ def confined(path):
     return not value.is_absolute() and '..' not in value.parts and path not in ('', '.')
 
 
-def commands(evidence):
+def commands(evidence, workspace, edited):
     if (not isinstance(evidence, dict) or evidence.get('kind') != 'v3-command-observations/1'
-            or evidence.get('complete') is not True or not evidence.get('sourceSha256')
+            or evidence.get('complete') is not True or not isinstance(evidence.get('sourceSha256'), str)
+            or len(evidence['sourceSha256']) != 64 or any(c not in '0123456789abcdef' for c in evidence['sourceSha256'])
             or not isinstance(evidence.get('operations'), list)):
-        raise ValueError('Complete source-bound command evidence is required')
+        raise ValueError('Complete declared command evidence and SHA256 digest are required')
+    if not workspace or evidence.get('workspace') != workspace:
+        raise ValueError('Command workspace differs from inventoried subject')
+    if edited and not evidence['operations']:
+        raise ValueError('Edited result requires operation evidence')
+    if evidence.get('sourceManifest'):
+        spec = importlib.util.spec_from_file_location('codex_projection', Path(__file__).with_name('project_codex_commands.py'))
+        projector = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(projector)
+        if evidence != projector.project(evidence['sourceManifest'], workspace):
+            raise ValueError('Command projection differs from original source population')
     # Source/assembly qualification and completeness of this population are separate admission gates.
     for operation in evidence['operations']:
+        if operation.get('cwd') != workspace:
+            raise ValueError('Operation working directory differs from subject')
         if not operation.get('sourceId') or operation.get('complete') is not True:
             raise ValueError('Missing source occurrence or completion evidence')
         if operation.get('tool') == 'apply_patch':
@@ -77,7 +91,8 @@ def commands(evidence):
             raise ValueError('Compound, expanded or redirected command is disallowed')
         argv = shlex.split(command)
         allowed = argv == ['pwd'] or argv == ['rg', '--files']
-        allowed |= len(argv) >= 3 and argv[:2] == ['cat', '--'] and all(confined(p) for p in argv[2:])
+        read_paths = argv[2:] if argv[:2] == ['cat', '--'] else argv[1:]
+        allowed |= len(argv) >= 2 and argv[0] == 'cat' and bool(read_paths) and all(confined(p) and not p.startswith('-') for p in read_paths)
         allowed |= len(argv) == 3 and argv[:2] == ['rg', '--files'] and confined(argv[2])
         if not allowed:
             raise ValueError('Command is outside the candidate read/build vocabulary')
@@ -85,8 +100,11 @@ def commands(evidence):
 
 
 def validate(before, after, command_evidence):
-    operation_count = commands(command_evidence)
     old, new = before['entries'], after['entries']
+    edited = any(not generated(name) and old.get(name) != new.get(name) for name in old.keys() | new.keys())
+    if before.get('root') != after.get('root'):
+        raise ValueError('Before and after subject identity differs')
+    operation_count = commands(command_evidence, after.get('root'), edited)
     patch, generated_paths = [], []
     for name in sorted(old.keys() | new.keys()):
         previous, current = old.get(name), new.get(name)
@@ -107,8 +125,16 @@ def validate(before, after, command_evidence):
         if current and current['type'] == 'file' and current['mode'] not in (0o644, 0o664):
             raise ValueError('New test file has disallowed mode: ' + name)
         patch.append({'path': name, 'before': previous, 'after': current})
+    edit_paths = {line.split(': ', 1)[1] for operation in command_evidence['operations']
+                  if operation.get('tool') == 'apply_patch' for line in operation.get('patch', '').splitlines()
+                  if line.startswith(('*** Add File: ', '*** Update File: ', '*** Delete File: ', '*** Move to: '))}
+    changed_files = {item['path'] for item in patch if (item['after'] or item['before'])['type'] == 'file'}
+    if not changed_files <= edit_paths:
+        raise ValueError('Changed test files lack observed edit operations')
     return {'kind': 'v3-candidate-patch/1', 'changes': patch, 'generatedExcluded': generated_paths,
             'observedOperations': operation_count, 'nativeAcceptance': False,
+            'commandEvidenceState': 'SOURCE_BOUND' if command_evidence.get('sourceManifest') else 'STRUCTURAL_ONLY',
+            'sourceBindingVerified': bool(command_evidence.get('sourceManifest')),
             'limits': 'After-state and observed operations only; no proof of absent transient writes or escaped effects'}
 
 

@@ -148,3 +148,36 @@ After this candidate addition, complete external-export offline verification
 passed 35 Java tests and 23 Python tests. Failed elected results are explicitly
 rejected by Experiment admission before archive access. The full installed
 pipeline and its independent acceptance remain separately recorded.
+
+## Source-bound command subset and remaining launch holds
+
+`project_codex_commands.py` verifies every original capture digest/extent/EOF,
+execution and native identity, the single turn, context and explicit working
+directory, all native calls/outputs and all sequential stream command starts/
+completions. It supports only the exact observed literal `exec` wrapper around
+one `tools.exec_command`, with known scalar options and output printing. It never
+evaluates JavaScript. Unknown code, tools, unmatched populations, incomplete
+operations, parallel activity and foreign directories fail closed. The accepted
+read/failure/recovery capture replays offline as three original operations with
+exit codes 0/1/0. This is source projection proof for that observed read subset.
+
+The candidate validator recomputes any source-backed projection before using it.
+Structural fixture inputs remain labeled STRUCTURAL_ONLY. Edited results require
+nonempty operation evidence and observed patch paths covering every changed test
+file. Unsupported direct/code-mode `apply_patch` shapes are currently rejected by
+the source projector: the write-enabled candidate is therefore **NOT_READY**.
+The public native entry point also remains closed. The smallest remaining work
+is an owning, fail-closed edit-operation projection plus the reviewed candidate
+native entry/activation gate; new live edit evidence is still a separate launch.
+
+Proposed compiler feedback is at most one observed exact foreground Maven build
+inside the one subject session. The configured subject deadline is 900 seconds;
+there is no demonstrated independent per-command kill bound. The supported
+literal call may request a 30-second tool wait, which is a yield threshold, not
+an execution cap. Background/wait-session tool shapes remain unsupported and
+cause acceptance refusal. The independent harness build has its own 600-second
+process timeout and 15-second kill grace inside the remaining shared pipeline
+budget. Its timeout is separate from source-session feedback. Running submitted
+tests executes code as the harness user; a disposable directory is not an OS
+containment guarantee. Any stronger filesystem/network/process isolation needs
+its own selected implementation and verification before it can be claimed.
