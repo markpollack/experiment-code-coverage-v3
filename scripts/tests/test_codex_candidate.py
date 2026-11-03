@@ -101,6 +101,11 @@ class CandidatePolicyTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'working directory'):
             m.validate(self.before, m.inventory(self.subject), evidence)
 
+    def test_multiple_observed_feedback_builds_rejected(self):
+        self.evidence['operations'].append(copy.deepcopy(self.evidence['operations'][0]))
+        with self.assertRaisesRegex(ValueError, 'More than one observed compiler feedback'):
+            self.check()
+
     def test_test_patch_observation_rejects_protected_patch_paths(self):
         self.evidence['operations'] = [{'tool': 'apply_patch', 'sourceId': 'fixture/2',
             'complete': True, 'cwd': str(self.subject.resolve()), 'patch': '*** Begin Patch\n*** Add File: src/test/NewTest.java\n+test\n*** End Patch'}]

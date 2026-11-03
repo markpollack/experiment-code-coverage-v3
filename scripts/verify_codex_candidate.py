@@ -67,6 +67,7 @@ def commands(evidence, workspace, edited):
         if evidence != projector.project(evidence['sourceManifest'], workspace):
             raise ValueError('Command projection differs from original source population')
     # Source/assembly qualification and completeness of this population are separate admission gates.
+    feedback_builds = 0
     for operation in evidence['operations']:
         if operation.get('cwd') != workspace:
             raise ValueError('Operation working directory differs from subject')
@@ -85,6 +86,9 @@ def commands(evidence, workspace, edited):
         if not isinstance(command, str) or not isinstance(operation.get('exitCode'), int):
             raise ValueError('Missing command or exit evidence')
         if command == BUILD:
+            feedback_builds += 1
+            if feedback_builds > 1:
+                raise ValueError('More than one observed compiler feedback build')
             continue
         # A deliberately small candidate read vocabulary. This observes, never prevents execution.
         if any(token in command for token in (';', '|', '&', '>', '<', '$', '`', '\n', '\r', '*', '?')):
