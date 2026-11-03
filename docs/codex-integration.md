@@ -31,3 +31,70 @@ Use an isolated Maven cache with exact producer hashes. Run the complete offline
 Java verification and checked-in Python tests, then actual packaged-consumer and
 separate reader checks. Failed result and archive mismatch controls must preserve
 truthful original evidence. A native prelaunch proposal is not launch authority.
+
+## Implemented deterministic route
+
+`NativeCoverageApp` accepts the existing Claude options unchanged. The explicit
+Codex fixture variant replaces `--claude-executable` with `--codex-executable`
+and `--codex-fixture-mode success|failed|wrong`. It verifies the child and native
+template against the packaged resource hashes. The separate fixture ledger has
+kind `v3-codex-fixture-only/1`; it consumes no historical native allowance.
+The pipeline manifest selects `provider=CODEX` and `mode=SYNTHETIC_FIXTURE`.
+Both the launcher and the public native-open entry point reject Codex native work.
+
+The composition uses Client's actual Codex provider, async execution and sealed
+acquisition. The original public Journal recorder produces the original decision
+bytes. A separate complete receiver envelope retains those bytes; the recorder
+returns that receiver's actual binding ID to Client. Experiment verifies that
+binding with the original execution and response. Capture paths are retained as
+hash-checked references returned by Client, never guessed from execution IDs.
+Archive failure records its original exception without replacing the Client result.
+
+## Native proposal and controls
+
+Candidate executable/version and subscription route are the independently accepted
+read-only probe's Codex 0.166.0 selection. Its explicit model is gpt-6-luna/high;
+that observation establishes neither a PetClinic edit run nor supported hard USD,
+token or internal-turn limits. The prospective task remains the pinned simple
+PetClinic item, one fresh generation, no retry and zero judge inference calls.
+The existing before-tree, item and base-prompt hashes in `PinnedCoverageTask`
+are unchanged.
+
+The current Client provider exposes read-only or workspace-write sandbox selection,
+execution deadline, cwd, model, effort and environment. It does not expose the
+Claude synchronous before-tool decision hook used by `CoverageEditPolicy`.
+Read-only cannot perform the task. Workspace-write does not limit writes to
+`src/test`, permit only the exact foreground Maven command, or prove denial.
+The current test-only policy gate therefore remains NOT_READY. Protected-file
+comparison remains a separate post-run observation.
+
+The smallest reviewable options preserve the product's acceptance requirements:
+
+1. Keep native work held while a separately scoped provider policy capability
+   supplies and tests synchronous path/operation denial for the existing policy.
+2. Separately design an isolated execution boundary with a test-only write mount
+   and an operation broker that exposes the exact trusted build command. Filesystem
+   isolation alone is insufficient; broker restrictions and process ownership
+   need their own deterministic and native proof before activation.
+
+Neither option is implemented or authorized by this deterministic return. A Client
+change is not presumed: the selected route limitation must first be assigned to
+its actual owner. Proposed execution remains 900 seconds plus 15 seconds cleanup,
+inside the shared 1,800-second pipeline with independent measurement/reader/ACT
+reserve; these are existing supported wall-time mechanisms, not dollar or turn
+caps. Observed process cleanup does not establish escaped-process containment.
+
+All ten acceptance gates remain: launch integrity, Client cleanup, native sources,
+required policy, protected inputs, archive reader, Workflow result, full Jury,
+ACT and accounting. The accepted three-operation read/failure/recovery probe adds
+live archive evidence only. Native V3 activation still requires exact artifact
+closure, supported policy/bounds and separate Owner approval.
+
+## Current verification
+
+The first complete external-export offline build passed all 35 Java tests and
+15 Python tests. This includes preserved Claude behavior, actual Codex child
+success/original-decision/archive admission, foreign-capture refusal, failed result,
+wrong native identity, native-launch refusal and unchanged deterministic Jury
+controls. Packaged pipeline and detached reader consumption are recorded separately;
+a fixture result never claims native task acceptance.

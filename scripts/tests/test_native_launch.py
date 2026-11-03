@@ -10,6 +10,19 @@ spec.loader.exec_module(module)
 
 
 class NativeLaunchTest(unittest.TestCase):
+    def test_codex_mode_cannot_claim_claude_policy_or_native_authority(self):
+        with tempfile.TemporaryDirectory() as name:
+            manifest = Path(name) / 'manifest.json'
+            data = {'kind': 'v3-native-coverage-launch/1', 'mode': 'NATIVE',
+                    'provider': 'CODEX', 'prelaunchReview': {'status': 'ACCEPTED'}}
+            manifest.write_text(json.dumps(data))
+            with self.assertRaisesRegex(ValueError, 'Codex native V3 policy is unqualified'):
+                module.verified_manifest(manifest)
+            data['mode'] = 'SYNTHETIC_FIXTURE'
+            manifest.write_text(json.dumps(data))
+            with self.assertRaisesRegex(ValueError, 'Explicit Codex local fixture mode'):
+                module.verified_manifest(manifest)
+
     def test_reviewed_cap_alone_does_not_authorize_dollars_or_more_submissions(self):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)

@@ -10,6 +10,7 @@ class ReadNativeCoverage {
         if (args.length != 3) throw new IllegalArgumentException("results-directory run-id new-output-directory");
         for (String name : List.of("io.tuvium.experiment.coverage.NativeCoverageClient",
                 "io.github.markpollack.agents.client.AgentClient",
+                "io.github.markpollack.agents.codex.CodexClientProvider",
                 "io.github.markpollack.claude.agent.sdk.DefaultClaudeSyncClient",
                 "io.github.markpollack.journal.ocsf.writer.TerminalReceiver")) {
             try { Class.forName(name); throw new IllegalStateException("Reader contains forbidden class: " + name); }

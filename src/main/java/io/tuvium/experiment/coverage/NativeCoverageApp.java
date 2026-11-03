@@ -24,13 +24,17 @@ public final class NativeCoverageApp {
         for (int n=0;n<args.length;n+=2) {
             if (n+1>=args.length || options.put(args[n],args[n+1])!=null) throw new IllegalArgumentException("Unique option/value pairs required");
         }
-        if (!options.keySet().equals(Set.of("--project-root","--output-dir","--run-id","--attempt-ledger","--claude-executable","--outer-deadline")))
+        boolean codexFixture=options.containsKey("--codex-fixture-mode");
+        Set<String> required=codexFixture
+                ? Set.of("--project-root","--output-dir","--run-id","--attempt-ledger","--codex-executable","--codex-fixture-mode","--outer-deadline")
+                : Set.of("--project-root","--output-dir","--run-id","--attempt-ledger","--claude-executable","--outer-deadline");
+        if (!options.keySet().equals(required))
             throw new IllegalArgumentException("Exact native launch options required");
         Path project=Path.of(options.get("--project-root")).toRealPath();
         Path requested=Path.of(options.get("--output-dir")).toAbsolutePath().normalize();
         Path evidence=requested.getParent().toRealPath().resolve(requested.getFileName());
         Path ledger=Path.of(options.get("--attempt-ledger")).toRealPath();
-        Path executable=Path.of(options.get("--claude-executable")).toRealPath();
+        Path executable=Path.of(options.get(codexFixture?"--codex-executable":"--claude-executable")).toRealPath();
         Instant deadline=Instant.ofEpochMilli(Long.parseLong(options.get("--outer-deadline")));
         long remaining=Duration.between(Instant.now(),deadline).toMillis();
         if (remaining<=420_000 || remaining>1_785_000) throw new IllegalArgumentException("Bounded outer deadline required");
@@ -44,7 +48,7 @@ public final class NativeCoverageApp {
         Process version=new ProcessBuilder(executable.toString(),"--version").redirectErrorStream(true)
                 .redirectOutput(evidence.resolve("cli-version.txt").toFile()).start();
         if (!version.waitFor(10,TimeUnit.SECONDS)) {version.destroyForcibly(); throw new IllegalStateException("CLI version check timed out");}
-        if (version.exitValue()!=0 || !Files.readString(evidence.resolve("cli-version.txt")).startsWith(NativeCoverageClient.CLI_VERSION+" "))
+        if (version.exitValue()!=0 || !Files.readString(evidence.resolve("cli-version.txt")).startsWith(codexFixture?"codex-cli "+CodexCoverageClient.VERSION:NativeCoverageClient.CLI_VERSION+" "))
             throw new IllegalStateException("Selected CLI version differs");
         Path workspace=evidence.resolve("workspace");
         var pinned=PinnedCoverageTask.prepare(project,workspace);
@@ -57,21 +61,23 @@ public final class NativeCoverageApp {
             provenance.add(Evidence.reference(jar,"runtime-jar"));
         }
         Path global=Path.of(System.getProperty("user.home"),".claude");
+        if(!codexFixture) {
         for(String name:List.of("settings.json","settings.local.json","CLAUDE.md")) {
             Path file=global.resolve(name);if(Files.isRegularFile(file)) provenance.add(Evidence.reference(file,"global-configuration"));
         }
         if(Files.isDirectory(global.resolve("skills"))) try(var files=Files.walk(global.resolve("skills"))) {
             for(Path file:files.filter(Files::isRegularFile).sorted().toList()) provenance.add(Evidence.reference(file,"global-skill"));
         }
-        provenance.add(Evidence.reference(executable,"claude-executable"));
+        }
+        provenance.add(Evidence.reference(executable,codexFixture?"codex-fixture-executable":"claude-executable"));
         provenance.add(Evidence.reference(project.resolve("prompts/v0-simple.txt"),"pinned-prompt"));
         provenance.add(Evidence.reference(project.resolve("dataset/items/spring-petclinic-partial/item.json"),"pinned-item"));
         CoverageEvidence.write(evidence.resolve("launch.json"),Map.of("identity",identity,"sourceCommit",commit,"pinned",pinned,
-                "outerDeadline",deadline.toString(),"subjectLimitMs",900000,"cleanupLimitMs",15000,"nativeCapUsd",5,
+                "outerDeadline",deadline.toString(),"subjectLimitMs",900000,"cleanupLimitMs",15000,"nativeCapUsd",codexFixture?"NOT_APPLICABLE_SYNTHETIC":5,
                 "semanticQuality","NOT_ASSESSED","inputs",provenance));
-        var task=new Task(identity,workspace.toString(),Files.readString(project.resolve("prompts/v0-simple.txt")),NativeCoverageClient.MODEL,evidence.toString());
+        var task=new Task(identity,workspace.toString(),Files.readString(project.resolve("prompts/v0-simple.txt")),codexFixture?CodexCoverageClient.MODEL:NativeCoverageClient.MODEL,evidence.toString());
         var active=new AtomicReference<AgentExecution>();
-        var invoke=new Invoke(active,evidence,ledger,deadline,before);
+        var invoke=new Invoke(active,evidence,ledger,deadline,before,codexFixture);
         var prepare=new Prepare(); var measure=new Measure();
         var graph=Workflows.define("coverage-v3-native").maxDuration(Duration.ofMillis(remaining-420_000))
                 .then("prepare-baseline",prepare).then("invoke-native",invoke).then("measure-final",measure)
@@ -80,7 +86,8 @@ public final class NativeCoverageApp {
                 .register("coverage-native-invoke-v1",invoke).register("coverage-native-measure-v1",measure).build();
         var compatibility=new ExecutionCompatibility("coverage-v3-native",commit,Map.of("launchSha256",Evidence.sha256(evidence.resolve("launch.json"))));
         WorkflowAdapter.Execution execution;
-        try (var client=NativeCoverageClient.open(workspace,evidence,executable.toString())) {
+        try (var client=codexFixture?CodexCoverageClient.openFixture(workspace,evidence,executable.toString(),options.get("--codex-fixture-mode"))
+                : NativeCoverageClient.open(workspace,evidence,executable.toString())) {
             invoke.service=new AsyncClientInvocationService(client);
             execution=new WorkflowAdapter().execute(evidence.resolve("workflow"),graph,registry,compatibility,identity,task,
                     NativeCoverageClient.CLEANUP_LIMIT,()->{var handle=active.get(); if(handle!=null) handle.cancel(false);});
@@ -104,7 +111,7 @@ public final class NativeCoverageApp {
         if (!store.load(identity.runId()).orElseThrow().equals(result)) throw new IllegalStateException("Immutable result readback differs");
         CoverageEvidence.write(evidence.resolve("completion.json"),Map.of("workflow",row.workflowState(),"judge",row.judgeState(),
                 "semanticQuality","NOT_ASSESSED","nativeSubmissionReserved",Files.exists(evidence.resolve("submission.json")),
-                "actualCostState","UNKNOWN","nativeCapUsd",5));
+                "actualCostState","UNKNOWN","nativeCapUsd",codexFixture?"NOT_APPLICABLE_SYNTHETIC":5));
         if (!execution.accepted() || row.invocations().size()!=1 || !row.judgeState().equals("RETURNED"))
             throw new IllegalStateException("Native attempt incomplete; preserve raw attempt and never replay implicitly");
     }
@@ -112,9 +119,12 @@ public final class NativeCoverageApp {
     static class Invoke implements Step<Prepared,Invoked> {
         AsyncClientInvocationService service;
         final AtomicReference<AgentExecution> active; final Path evidence, ledger; final Instant outerDeadline;
-        final CoverageEditPolicy.Snapshot initial;
+        final CoverageEditPolicy.Snapshot initial; final boolean codexFixture;
         Invoke(AtomicReference<AgentExecution> active,Path evidence,Path ledger,Instant outerDeadline,CoverageEditPolicy.Snapshot initial) {
-            this.active=active;this.evidence=evidence;this.ledger=ledger;this.outerDeadline=outerDeadline;this.initial=initial;
+            this(active,evidence,ledger,outerDeadline,initial,false);
+        }
+        Invoke(AtomicReference<AgentExecution> active,Path evidence,Path ledger,Instant outerDeadline,CoverageEditPolicy.Snapshot initial,boolean codexFixture) {
+            this.active=active;this.evidence=evidence;this.ledger=ledger;this.outerDeadline=outerDeadline;this.initial=initial;this.codexFixture=codexFixture;
         }
         public Invoked execute(StepContext context,Prepared prepared) {
             long start=System.nanoTime();
@@ -135,9 +145,14 @@ public final class NativeCoverageApp {
                         "basePromptSha256",Evidence.sha256(prepared.task().prompt().getBytes(java.nio.charset.StandardCharsets.UTF_8)),
                         "expandedPromptSha256",Evidence.sha256(prepared.expandedPrompt().getBytes(java.nio.charset.StandardCharsets.UTF_8)),
                         "basis","Pinned base prompt plus existing deterministic baseline metrics"));
-                NativeCoverageLedger.reserve(ledger,attempt.row().runId());
+                if(!codexFixture) NativeCoverageLedger.reserve(ledger,attempt.row().runId());
+                else {
+                    var fixtureLedger=CoverageEvidence.JSON.readTree(ledger.toFile());
+                    if(!"v3-codex-fixture-only/1".equals(fixtureLedger.path("kind").asText()))
+                        throw new IllegalStateException("Separate synthetic fixture ledger required");
+                }
                 CoverageEvidence.write(evidence.resolve("submission.json"),Map.of("attempt",attempt,"providerBudgetMs",budget,
-                        "reservedUsd",5,"actualCostState","UNKNOWN","startedAt",Instant.now().toString()));
+                        "reservedUsd",codexFixture?"NOT_APPLICABLE_SYNTHETIC":5,"actualCostState","UNKNOWN","startedAt",Instant.now().toString()));
                 started=service.start(attempt,Path.of(prepared.item().workspace()),prepared.expandedPrompt(),Duration.ofMillis(budget));
                 var handle=started.execution(); active.set(handle);
                 AgentClientResponse response=null; Exception responseFailure=null;
@@ -171,7 +186,7 @@ public final class NativeCoverageApp {
         Invocation accept(AsyncClientInvocationService.StartedExecution started, ExecutionTermination termination,
                 Path events, long budget, long elapsed) throws Exception {
             String execution=started.execution().executionId();
-            return NativeClientInvocation.accept(started,termination,evidence.resolve("sources").resolve(execution).resolve("acquisition.json"),
+            return NativeClientInvocation.accept(started,termination,codexFixture?CodexCoverageClient.originalManifest(evidence):evidence.resolve("sources").resolve(execution).resolve("acquisition.json"),
                     evidence.resolve("journal/native-"+execution),events,budget,elapsed);
         }
     }

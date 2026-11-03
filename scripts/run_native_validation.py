@@ -29,6 +29,14 @@ def verified_manifest(path):
         raise ValueError('Named coordinator prelaunch review is required')
     if data.get('mode') not in ('NATIVE', 'SYNTHETIC_FIXTURE'):
         raise ValueError('Explicit native or synthetic-fixture launch mode required')
+    provider = data.get('provider', 'CLAUDE')
+    if provider not in ('CLAUDE', 'CODEX'):
+        raise ValueError('Explicit supported provider required')
+    if provider == 'CODEX':
+        if data['mode'] != 'SYNTHETIC_FIXTURE':
+            raise ValueError('Codex native V3 policy is unqualified: test-only writes and exact Maven command enforcement required')
+        if data.get('fixtureMode') not in ('success', 'failed', 'wrong'):
+            raise ValueError('Explicit Codex local fixture mode required')
     if data['mode'] == 'NATIVE':
         approval = data.get('ownerSpendApproval') or {}
         if (not approval.get('reference') or approval.get('maxUsdPerAttempt', 0) < 5
@@ -50,7 +58,8 @@ def verified_manifest(path):
         for path in data[key]:
             if str(Path(path).resolve(strict=True)) not in selected:
                 raise ValueError('Unhashed classpath entry: ' + path)
-    for key in ('claudeExecutable', 'actPython', 'readerSource', 'mappingScript', 'javaExecutable', 'timeoutExecutable', 'launcherPython'):
+    executable_key = 'codexExecutable' if provider == 'CODEX' else 'claudeExecutable'
+    for key in (executable_key, 'actPython', 'readerSource', 'mappingScript', 'javaExecutable', 'timeoutExecutable', 'launcherPython'):
         if str(Path(data[key]).resolve(strict=True)) not in selected:
             raise ValueError('Unhashed launch component: ' + key)
     if str(Path(sys.executable).resolve()) != str(Path(data['launcherPython']).resolve()):
@@ -73,10 +82,12 @@ def inside(manifest, root, run_id):
     repo = str(Path(data['mavenRepository']).resolve(strict=True))
     env['MAVEN_ARGS'] = '-Dmaven.repo.local=' + repo
     app = root / 'application'
+    provider_args = (['--codex-executable', data['codexExecutable'], '--codex-fixture-mode', data['fixtureMode']]
+                     if data.get('provider') == 'CODEX' else ['--claude-executable', data['claudeExecutable']])
     execute([data['javaExecutable'], '-Dcoverage.mavenRepo=' + repo, '-cp', os.pathsep.join(data['runtimeClasspath']),
              'io.tuvium.experiment.coverage.NativeCoverageApp', '--project-root', data['projectRoot'],
              '--output-dir', str(app), '--run-id', run_id, '--attempt-ledger', data['attemptLedger'],
-             '--claude-executable', data['claudeExecutable'], '--outer-deadline', env['V3_SOFT_DEADLINE_EPOCH_MS']],
+             '--outer-deadline', env['V3_SOFT_DEADLINE_EPOCH_MS']] + provider_args,
             root / 'application.log', env)
     reader = root / 'independent-reader'
     execute([data['javaExecutable'], '--class-path', os.pathsep.join(data['readerClasspath']), data['readerSource'],
