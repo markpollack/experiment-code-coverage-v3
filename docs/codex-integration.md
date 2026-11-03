@@ -98,3 +98,24 @@ success/original-decision/archive admission, foreign-capture refusal, failed res
 wrong native identity, native-launch refusal and unchanged deterministic Jury
 controls. Packaged pipeline and detached reader consumption are recorded separately;
 a fixture result never claims native task acceptance.
+
+## Candidate policy disposition
+
+The V3 owner accepts deterministic preparation of a workspace-write candidate.
+It is explicitly different from the prior preventive hook: the sandbox bounds
+the selected workspace while a complete after-inventory and command evidence
+determine whether the result is acceptable. Test-only intent is an instruction,
+not preventive write enforcement. No native activation follows this disposition.
+
+The candidate verifier will reject protected new/changed/deleted paths, symlinks,
+file-type or mode changes and missing/disallowed command evidence. Generated
+`target` content is retained as observed build output and excluded from the patch.
+Only the validated test patch is applied to a fresh pinned verification copy.
+The harness performs the same bounded exact foreground Maven command there and
+rechecks protected files. Submitted test code is executable; its process and
+filesystem effects need the selected disposable isolation, not a read-only claim.
+
+The first proposal remains one fresh Codex execution; no planner/edit/reviewer
+split. Writable cache/build paths, evidence completeness, actual command policy
+and timeout/cleanup limits must be named in the frozen proposal. Unsupported
+transient-write/escaped-process/dollar/token/internal-turn guarantees stay explicit.
