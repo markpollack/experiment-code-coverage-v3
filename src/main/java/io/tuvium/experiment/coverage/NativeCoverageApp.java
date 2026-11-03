@@ -52,7 +52,7 @@ public final class NativeCoverageApp {
             if(!Set.of("fixture","native").contains(options.get("--codex-candidate-mode")))throw new IllegalArgumentException("Unknown candidate mode");
             var guard=new ProcessBuilder(System.getProperty("coverage.candidatePython"),System.getProperty("coverage.candidateGuard"),
                     "--manifest",System.getProperty("coverage.candidateManifest"),"--claim","--application",evidence.toString(),
-                    "--executable",executable.toString(),"--candidate-mode",options.get("--codex-candidate-mode")).inheritIO().start();
+                    "--executable",executable.toString(),"--candidate-mode",options.get("--codex-candidate-mode"),"--run-id",options.get("--run-id")).inheritIO().start();
             if(!guard.waitFor(90,TimeUnit.SECONDS)){guard.destroyForcibly();throw new IllegalStateException("Candidate guard timed out");}
             if(guard.exitValue()!=0)throw new IllegalStateException("Candidate guard refused exact approval/reservation");
         }

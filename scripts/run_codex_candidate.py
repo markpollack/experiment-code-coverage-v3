@@ -32,7 +32,7 @@ def validate(data):
         path=Path(ref['path']);require(path.is_absolute() and path.resolve(strict=True)==path and path.is_file(),'Ordinary exact artifact required')
         require(sha(path)==ref['sha256'],'Changed artifact: '+str(path));selected[str(path)]=ref['sha256']
     for key in ('javaExecutable','launcherPython','actPython','timeoutExecutable','codexExecutable','readerSource','mappingScript','candidateSurface','launcher','pipelineLauncher'):
-        require(data[key] in selected,'Unhashed launch component: '+key)
+        require(str(Path(data[key]).resolve(strict=True)) in selected,'Unhashed launch component: '+key)
     require(data['launcher']==str(Path(__file__).resolve()),'Wrong installed guard')
     for key in ('runtimeClasspath','readerClasspath'):
         require(data[key] and set(data[key])<=selected.keys(),'Unhashed classpath')
@@ -74,13 +74,14 @@ def preflight(data,env):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--manifest',type=Path,required=True);p.add_argument('--activation',type=Path)
-    p.add_argument('--check-only',action='store_true');p.add_argument('--claim',action='store_true');p.add_argument('--application');p.add_argument('--executable');p.add_argument('--candidate-mode');a=p.parse_args()
+    p.add_argument('--check-only',action='store_true');p.add_argument('--claim',action='store_true');p.add_argument('--application');p.add_argument('--executable');p.add_argument('--candidate-mode');p.add_argument('--run-id');a=p.parse_args()
     data=json.loads(a.manifest.read_text());env=validate(data);digest=sha(a.manifest)
     if a.check_only:print(json.dumps({'status':'VALID_INERT_PACKET','manifestSha256':digest}));return
     if a.claim:
         root=Path(data['outputDirectory']);reservation=json.loads((root/'candidate-reservation.json').read_text())
         require(reservation==json.loads(Path(data['attemptLedger']).read_text()),'Ledger/reservation identity mismatch')
         require(reservation.get('manifestSha256')==digest and reservation.get('runId')==data['runId'],'Foreign reservation')
+        require(a.run_id==data['runId'],'Foreign run identity')
         require(a.application==str(root/'application') and a.executable==data['codexExecutable'],'Foreign application/executable')
         require(a.candidate_mode==('native' if data['mode']=='NATIVE' else 'fixture'),'Candidate mode mismatch')
         if data['mode']=='NATIVE':

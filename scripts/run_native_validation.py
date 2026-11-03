@@ -85,6 +85,8 @@ def execute(argv, log, env):
 
 def inside(manifest, root, run_id):
     data = verified_manifest(manifest)
+    if data.get('candidateMode') and (data['runId'] != run_id or data['outputDirectory'] != str(root)):
+        raise ValueError('Foreign candidate run/output')
     if data['mode'] == 'NATIVE' and data.get('approvedRunId') != run_id:
         raise ValueError('Native run identity differs from reviewed launch')
     env = os.environ.copy()
