@@ -27,6 +27,8 @@ class FirstLiveTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'root mode'):surface.validate(before,surface.inventory(root))
             link=Path(d)/'link';link.symlink_to(root)
             with self.assertRaisesRegex(ValueError,'Symbolic inventory root'):surface.inventory(link)
+            file=Path(d)/'file';file.write_text('not a directory')
+            with self.assertRaisesRegex(ValueError,'Ordinary directory'):surface.inventory(file)
 
     def test_final_inventory_accepts_patch_without_shell_interpretation(self):
         with tempfile.TemporaryDirectory() as d:

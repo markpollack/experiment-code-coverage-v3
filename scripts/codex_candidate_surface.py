@@ -12,6 +12,7 @@ confined,is_test=_core.confined,_core.is_test
 def inventory(root):
     root=Path(root)
     if root.is_symlink():raise ValueError('Symbolic inventory root')
+    if not root.is_dir():raise ValueError('Ordinary directory inventory root required')
     result=_core.inventory(root)
     result['rootMode']=stat.S_IMODE(root.stat().st_mode)
     return result
