@@ -1,5 +1,38 @@
 # V3 roadmap
 
+## Returned corrected Codex PetClinic native attempt
+
+The separately Owner-approved corrected packet ran once at tested source
+`3922445415a340b0d4c5f780c7cf5d0505d47bd4`. Run
+`codex-petclinic-composed-native-02` is **NOT_ACCEPTED**. One reservation,
+claim, Client submission and completed native generation consumed the allowance;
+there was no retry or judge inference. Client completion was successful, while
+its response did not establish the coverage objective.
+
+The isolated baseline passed 29 tests at 64.8649% line coverage. Original capture
+and delivery completed, but the installed archive verifier returned INCOMPLETE:
+eleven rollout `FileChange` completed-item source meanings are unresolved.
+The final build, coverage, full Jury, detached reader and ACT stages were not run.
+The original response, decision, acquisition, archive and three added test files
+remain preserved. Subsequent read-only inventory validation separately rejects
+four new empty protected directories; their runtime/subject origin is unresolved.
+Observed subject Maven failures identify missing Git HEAD and compiler availability
+as additional launch-boundary findings. No repair or build was run after failure.
+
+Private owning proof SHA256
+`b9e3c8a84195b0cc2120b5cfd19146353a72114d7fc0d387724053e629ceb6ad`
+retains exact packet/evidence pointers, original failed and unexecuted gates,
+usage once, confirmed cleanup and preservation. Cost remains UNKNOWN. Portfolio
+independently reproduced the archive and inventory refusals. This documentation
+update follows verification and native execution closure; it is not the tested
+source pin.
+
+Next eligible work requires separate scope: Journal qualifies the observed
+`FileChange` meanings, and V3 diagnoses subject build configuration and protected
+directory materialization against frozen evidence. Client remains paused. No
+retry, next native attempt, Actualize activation or publication follows; real ACP
+Bud Actualize readiness remains downstream of separately accepted live PetClinic.
+
 ## Returned model-free launch composition repair
 
 The owner authorizes a model-free correction at the selected SDK → V3 wrapper →
