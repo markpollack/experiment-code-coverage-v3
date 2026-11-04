@@ -1,10 +1,13 @@
 # V3 roadmap
 
-## Active bounded Codex first-live readiness
+## Returned bounded Codex first-live readiness
 
-Owner activated deterministic preparation on November 3. The sole V3 owner accepts
-the launcher, final-inventory patch gate and isolated fresh-copy verification scope.
-Useful pushed checkpoint within 20 active minutes; return at 40 minutes.
+Owner activated deterministic preparation on November 3. The sole V3 owner returns
+the guarded launcher, complete final-inventory patch gate and isolated fresh-copy
+verification scope. The useful source checkpoint was pushed within 20 minutes.
+Offline Java35/Python36 checks, installed task/reader/Jury/ACT, restricted build
+and refusal controls passed. Final root-mode strengthening has a separate installed
+positive/refusal proof after the successful full fixture; that full fixture is not rerun.
 Native activation remains separate and requires the exact reviewed packet.
 See [current design](codex-integration.md#first-live-readiness-policy).
 

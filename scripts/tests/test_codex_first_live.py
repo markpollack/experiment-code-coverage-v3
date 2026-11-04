@@ -20,6 +20,14 @@ class FirstLiveTest(unittest.TestCase):
         for invalid in (['exec','prompt'],['exec','--sandbox','danger-full-access','prompt'],['exec','--sandbox','workspace-write','resume','id']):
             with self.assertRaises(ValueError):policy.native_arguments(invalid,'/tmp/subject','/tmp/cache')
 
+    def test_root_mode_and_symbolic_root_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)/'subject';root.mkdir();before=surface.inventory(root)
+            root.chmod(0o700)
+            with self.assertRaisesRegex(ValueError,'root mode'):surface.validate(before,surface.inventory(root))
+            link=Path(d)/'link';link.symlink_to(root)
+            with self.assertRaisesRegex(ValueError,'Symbolic inventory root'):surface.inventory(link)
+
     def test_final_inventory_accepts_patch_without_shell_interpretation(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);(root/'src/test').mkdir(parents=True);(root/'pom.xml').write_text('protected')

@@ -282,3 +282,26 @@ build is at most 600s plus 13s termination/2s forced-exit observation, within th
 shared bound. Dollars, tokens, internal turns and number of subject commands have
 no hard cap. Unknown cost stays unknown. Final inventory cannot rule out transient
 subject writes or earlier effects; established contrary effects still reject.
+
+### Bounded deterministic return
+
+The installed local fixture passes the pinned task, original Client decision and
+complete archive, Workflow, full deterministic Jury, separate packaged reader and
+all nine ACT outputs. A separate Portfolio process consumed the original result
+and independently accepted the same execution/decision. Failed result, foreign
+archive, missing/foreign approval, changed input, repeated reservation and cleanup
+controls pass. Full offline Java checks pass 35 tests; final Python checks pass 36.
+The canned tests are synthetic consumer evidence, not native Codex test quality.
+
+The successful full fixture retains its exact closure. A final narrow review found
+workspace-root mode was omitted while descendant modes were checked. The final
+Python validator now records/requires root mode and rejects a symbolic root. Its
+installed positive transfer of the same accepted test bytes and negative root-mode
+control pass; this strengthening has separate installed proof and no additional
+full fixture repeat. Compiled Java and producer artifacts are unchanged.
+
+The runnable native-only packet selects the final source and exact artifacts; it
+remains inert until a later Owner activation names its hash and exact policy. No
+native PetClinic submission, new inference, release, tag or deployment occurred.
+The preparation grant expires at the owning return; no command or continuation
+is delegated automatically.

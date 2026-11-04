@@ -2,11 +2,27 @@
 import argparse
 import json
 import re
+import stat
 from pathlib import Path
 import importlib.util
 _spec=importlib.util.spec_from_file_location("candidate_core",Path(__file__).with_name("verify_codex_candidate.py"))
 _core=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(_core)
-inventory,apply_patch,confined,is_test=_core.inventory,_core.apply_patch,_core.confined,_core.is_test
+confined,is_test=_core.confined,_core.is_test
+
+def inventory(root):
+    root=Path(root)
+    if root.is_symlink():raise ValueError('Symbolic inventory root')
+    result=_core.inventory(root)
+    result['rootMode']=stat.S_IMODE(root.stat().st_mode)
+    return result
+
+def apply_patch(subject,verification,before,after,patch):
+    if inventory(subject)!=after:raise ValueError('Subject changed after verification')
+    if inventory(verification)['rootMode']!=before['rootMode']:
+        raise ValueError('Fresh verification root mode differs')
+    clean=lambda value:{k:v for k,v in value.items() if k!='rootMode'}
+    _core.apply_patch(subject,verification,clean(before),clean(after),patch)
+    return inventory(verification)
 
 TARGET_FILES = {'target/checkstyle-cachefile','target/checkstyle-checker.xml','target/checkstyle-header.txt','target/checkstyle-result.xml','target/test-ids'}
 TARGET_ROOTS = {'classes', 'test-classes', 'generated-sources', 'generated-test-sources',
@@ -19,6 +35,8 @@ def generated(name):
 
 
 def validate(before, after):
+    if before.get('rootMode') is None or before['rootMode']!=after.get('rootMode'):
+        raise ValueError('Inventory root mode missing or changed')
     if before['root'] != after['root']:
         raise ValueError('Different subject identity')
     changes, outputs = [], []
