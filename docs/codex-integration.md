@@ -324,3 +324,32 @@ its generic ACT tables alone cannot claim live qualification. Production packagi
 will omit the fixture child, template and canned test corpus; test resources retain
 the exact bytes. The existing packet remains frozen; replacement bytes receive a
 new manifest/packet and return for separate approval. No live run is authorized.
+
+
+### Implemented admission and packaging boundary
+
+The default installed mapper now requires the exact launch manifest and validates
+its original reservation/review, run/output and source association. Fixture rows
+produce an empty live population despite accepted archives, full deterministic Jury
+and measured coverage. Actual ACT rejects that empty population before writing
+any tables. Missing/ambiguous/relabelled provenance refuses. Native admission also
+binds the original executable/model/execution and Owner activation/reservation/claim.
+Offline readback evaluates expiry at the original reservation; the launcher and
+application claim still enforce expiry against the current clock.
+
+The production pipeline calls that admission path, and native candidate acceptance
+recomputes it. The previous all-observation diagnostic projections and fixture ACT
+tables remain historical. Their generic Experiment/ACT records alone establish no
+live trial, quality, spend or optimization value. An excluded fixture contributes
+zero spend; its unknown measured monetary cost is not rewritten as a measured zero.
+
+The production JAR excludes all nine canned child/template/corpus assets, with
+unchanged compiled class bytes. Full offline checks pass35Java/40Python. The exact
+original SYNTHETIC_FIXTURE and subsequent readiness FIXTURE both pass installed
+exclusion controls, independently consumed by Portfolio. Isolated-Python native
+readback controls include a valid structural positive and reject synthetic model
+identity; these controls are not native-provider qualification. A new independent
+prepared-cache/policy/manifest offer supersedes the old launch proposal without
+mutating it. The new policy preserves existing semantics with new exact roots and
+an explicit fixture-free provided-input boundary. Ordinary user-readable host
+files remain readable; retained historical corpora are not claimed inaccessible.

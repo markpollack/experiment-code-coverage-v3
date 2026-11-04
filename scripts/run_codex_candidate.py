@@ -50,7 +50,7 @@ def validate(data):
     for ref in data['files']:
         path=Path(ref['path']);require(path.is_absolute() and path.resolve(strict=True)==path and path.is_file(),'Ordinary exact artifact required')
         require(sha(path)==ref['sha256'],'Changed artifact: '+str(path));selected[str(path)]=ref['sha256']
-    for key in ('javaExecutable','launcherPython','actPython','timeoutExecutable','codexExecutable','readerSource','mappingScript','candidateSurface','launcher','pipelineLauncher','buildSandbox','nativeExecutable','wrapperPolicy','candidateAcceptance'):
+    for key in ('javaExecutable','launcherPython','actPython','timeoutExecutable','codexExecutable','readerSource','mappingScript','candidateSurface','launcher','pipelineLauncher','buildSandbox','nativeExecutable','wrapperPolicy','candidateAcceptance','exactPolicy'):
         require(str(Path(data[key]).resolve(strict=True)) in selected,'Unhashed launch component: '+key)
     require(data['launcher']==str(Path(__file__).resolve()),'Wrong installed guard')
     for key in ('runtimeClasspath','readerClasspath'):

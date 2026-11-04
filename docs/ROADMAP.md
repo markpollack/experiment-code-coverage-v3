@@ -1,14 +1,18 @@
 # V3 roadmap
 
-## Active bounded onboarding qualification
+## Bounded onboarding qualification implementation
 
 The owner accepts deterministic fixture-exclusion verification and a fixture-free
 first-native approval packet. Existing generic Experiment rows and diagnostic ACT
 mapping do not establish a live population. Add explicit launch-provenance admission
 at the V3 mapping boundary, excluding fixture rows before ACT, and move the canned
 child/corpus to test resources. Preserve every frozen specimen and prior packet.
-Read relevant steering at safe boundaries; return the exact replacement packet
-without any native launch. Full affected offline checks remain required.
+Full offline Java35/Python40 checks pass. Both exact frozen fixtures contribute
+zero live trials, successes and spend; live coverage/J remain absent. Actual ACT
+refuses the empty admitted population. Installed production JAR and pinned subject
+contain no known canned bytes; copied-cache contents were independently audited.
+The successor exact packet and owning private receipt close this grant separately;
+no native launch is authorized. Relevant steering remains checked at boundaries.
 
 ## Returned bounded Codex first-live readiness
 
