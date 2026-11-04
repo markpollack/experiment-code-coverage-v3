@@ -305,3 +305,22 @@ remains inert until a later Owner activation names its hash and exact policy. No
 native PetClinic submission, new inference, release, tag or deployment occurred.
 The preparation grant expires at the owning return; no command or continuation
 is delegated automatically.
+
+
+## Onboarding qualification disposition
+
+The owner accepts the scoped deterministic assignment. A source trace found that
+SYNTHETIC_FIXTURE/FIXTURE remains explicit in launch manifests and acceptance, but
+the generic Experiment result and V3 diagnostic ACT mapping can carry fixture PASS
+and coverage without a live-population admission decision. The native manifest
+also retained fixture file hashes and its application JAR bundled the canned corpus.
+These are V3 mapping/packaging seams, not Client adapter defects.
+
+The default mapping CLI will require the actual launch manifest and bind its mode,
+source, run and output to the original launch record. Fixture input contributes no
+live trials, success, spend, coverage or J before ACT. Missing/ambiguous provenance
+refuses. The underlying diagnostic projection remains available to offline tests;
+its generic ACT tables alone cannot claim live qualification. Production packaging
+will omit the fixture child, template and canned test corpus; test resources retain
+the exact bytes. The existing packet remains frozen; replacement bytes receive a
+new manifest/packet and return for separate approval. No live run is authorized.

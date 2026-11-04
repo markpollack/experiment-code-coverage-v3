@@ -9,7 +9,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-from analyze_fresh import mapping, selected_jury
+from analyze_fresh import mapping, selected_jury, admit_live
 
 
 class GateError(Exception):
@@ -285,6 +285,9 @@ def evaluate(root, manifest_path, snapshot=None):
         exported = root / "independent-reader/canonical.jsonl"
         expected = mapping(state["resultPath"], exported, root / "independent-reader/reader-receipt.json", app, None)
         inputs = evidence.json(root / "act-inputs.json")
+        if "liveAdmission" in inputs:
+            expected = admit_live(expected, manifest_path, app)
+            require(expected["liveAdmission"]["status"] == "ADMITTED_NATIVE", "ACT population is not live")
         require(inputs == expected, "ACT mapping differs from retained original source/Attempt/full Jury")
         manifest = evidence.json(root / "act/manifest.json")
         require(manifest["inputs_sha256"] == hashlib.sha256(evidence.read(root / "act-inputs.json")).hexdigest(),

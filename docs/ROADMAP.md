@@ -1,5 +1,15 @@
 # V3 roadmap
 
+## Active bounded onboarding qualification
+
+The owner accepts deterministic fixture-exclusion verification and a fixture-free
+first-native approval packet. Existing generic Experiment rows and diagnostic ACT
+mapping do not establish a live population. Add explicit launch-provenance admission
+at the V3 mapping boundary, excluding fixture rows before ACT, and move the canned
+child/corpus to test resources. Preserve every frozen specimen and prior packet.
+Read relevant steering at safe boundaries; return the exact replacement packet
+without any native launch. Full affected offline checks remain required.
+
 ## Returned bounded Codex first-live readiness
 
 Owner activated deterministic preparation on November 3. The sole V3 owner returns

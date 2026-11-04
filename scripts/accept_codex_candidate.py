@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from accept_native_coverage import Evidence, jury_verdict, require
 from codex_candidate_surface import inventory, validate
+from analyze_fresh import mapping, admit_live
 
 def evaluate(root, manifest_path):
     root=Path(root);app=root/'application';e=Evidence();m=e.json(manifest_path)
@@ -38,6 +39,11 @@ def evaluate(root, manifest_path):
     sandbox=e.json(app/'judges/independent-build-sandbox.json');require(sandbox['network']=='UNSHARED' and sandbox['pidNamespace']=='UNSHARED','Restricted build missing')
     act=e.json(root/'act/manifest.json');require(set(act['tables'])=={'tool_uses','item_results','runs','judge_details','cores','events','observations','edges','state_sequence'},'Incomplete ACT tables')
     require(act['inputs_sha256']==__import__('hashlib').sha256(e.read(root/'act-inputs.json')).hexdigest(),'ACT input association differs')
+    if m['mode']=='NATIVE':
+        expected=admit_live(mapping(result_path,root/'independent-reader/canonical.jsonl',
+            root/'independent-reader/reader-receipt.json',app,None),manifest_path,app)
+        require(e.json(root/'act-inputs.json')==expected and expected['liveAdmission']['status']=='ADMITTED_NATIVE',
+                'ACT inputs were not admitted as this native execution')
     # ACT's retained file roster is relative to its own output directory.
     for name,detail in act['files'].items():
         require(isinstance(detail,str) and len(detail)==64,'Invalid ACT file hash');e.read(root/'act'/name,detail)

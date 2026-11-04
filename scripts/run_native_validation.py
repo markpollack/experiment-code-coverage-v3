@@ -111,7 +111,11 @@ def inside(manifest, root, run_id):
     inputs = root / 'act-inputs.json'
     execute([data['actPython'], '-I', data['mappingScript'], '--result', str(result),
              '--export', str(reader / 'canonical.jsonl'), '--reader-receipt', str(reader / 'reader-receipt.json'),
-             '--evidence', str(app), '--output', str(inputs), '--mapping-only', 'true'], root / 'mapping.log', env)
+             '--evidence', str(app), '--output', str(inputs), '--mapping-only', 'true',
+             '--launch-manifest', str(manifest)], root / 'mapping.log', env)
+    if not json.loads(inputs.read_text())['inputs']:
+        write(root / 'live-exclusion.json', json.loads(inputs.read_text())['liveAdmission'])
+        raise ValueError('Synthetic fixture excluded from live ACT population')
     execute([data['actPython'], '-I', '-m', 'agent_control_theory.canonical', '--inputs', str(inputs),
              '--output', str(root / 'act')], root / 'act.log', env)
     if data.get('candidateMode'):

@@ -9,6 +9,7 @@ import signal
 import subprocess
 import sys
 import time
+import zipfile
 
 SAFE_ENV = {'HOME','CODEX_HOME','PATH','LANG','LC_ALL','TZ','TMPDIR','MAVEN_ARGS','MAVEN_OPTS','JAVA_HOME','MAVEN_USER_HOME','PYTHONDONTWRITEBYTECODE'}
 
@@ -17,6 +18,23 @@ def write(path,value):
     with Path(path).open('x') as out:json.dump(value,out,indent=2)
 def require(value,message):
     if not value:raise ValueError(message)
+
+def require_source(data):
+    source=subprocess.check_output(['git','-C',data['projectRoot'],'rev-parse','HEAD'],text=True).strip()
+    changes=subprocess.check_output(['git','-C',data['projectRoot'],'diff','--name-only','HEAD'],text=True)
+    require(source==data['sourceCommit'] and not changes,'Selected source changed or has tracked edits')
+
+def require_fixture_free(data):
+    """Production inputs must not carry the canned child/template/test patch."""
+    require(data.get('nativeInputPolicy')=='NO_SYNTHETIC_FIXTURE_ASSETS','Fixture-free native input policy required')
+    forbidden=('codex-child.py','codex-native-template.jsonl','codex-petclinic-tests')
+    for ref in data['files']:
+        path=Path(ref['path'])
+        require(not any(name in path.name or name in path.parts for name in forbidden),'Fixture asset in native input: '+str(path))
+        require(sha(path)==ref['sha256'],'Changed native input: '+str(path))
+        if path.suffix=='.jar':
+            with zipfile.ZipFile(path) as jar:
+                require(not any(any(part in entry for part in forbidden) for entry in jar.namelist()),'Fixture asset in native JAR: '+str(path))
 
 def validate(data):
     require(data.get('kind')=='v3-codex-first-launch/1','Wrong candidate manifest')
@@ -47,6 +65,7 @@ def validate(data):
     for key in ('subjectMavenRepository','mavenRepository'):
         require(not Path(data[key]).is_relative_to(root),'Prepared caches must survive clean outside output')
     require(data['runId'] and data['projectRoot'],'Pinned run/project required')
+    require_source(data)
     require(data['cacheInventory'] in selected,'Unhashed prepared cache inventory')
     caches=json.loads(Path(data['cacheInventory']).read_text())
     require(set(caches)=={data['mavenRepository'],data['subjectMavenRepository']},'Wrong cache roots')
@@ -58,15 +77,16 @@ def validate(data):
             require(path.is_file(),'Special cache entry');name=path.relative_to(root).as_posix();actual.add(name)
             require(entries.get(name)=={'sha256':sha(path),'mode':stat.S_IMODE(path.stat().st_mode)},'Changed prepared cache: '+str(path))
         require(actual==set(entries),'Prepared cache population changed')
+    if data['mode']=='NATIVE':require_fixture_free(data)
     return env
 
-def authorize(data,manifest_hash,activation):
+def authorize(data,manifest_hash,activation,at=None):
     require(activation is not None,'Separate Owner activation required')
     require(activation.get('nativeAuthorization') is True and activation.get('approvedSubmissions')==1,'Exactly one Owner-approved submission required')
     require(activation.get('manifestSha256')==manifest_hash,'Approval manifest hash mismatch')
     require(activation.get('outputDirectory')==data['outputDirectory'] and activation.get('runId')==data['runId'],'Approval output/run mismatch')
     require(bool(activation.get('ownerReference')),'Owner reference required')
-    require(activation.get('expiresEpochSeconds',0)>time.time(),'Owner activation expired')
+    require(activation.get('expiresEpochSeconds',0)>(time.time() if at is None else at),'Owner activation expired')
     require(activation.get('acceptedPolicy')==data['policy'] and activation.get('acceptedBuildBoundary')==data.get('buildBoundary')=='BWRAP_ISOLATED','Exact policy/build boundary approval required')
 
 def reserve(data,manifest_hash):

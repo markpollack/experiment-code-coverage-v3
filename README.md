@@ -31,3 +31,22 @@ The application preserves launch inputs, global skill/configuration hashes, base
 Qualify the immutable acquisition with Journal's supported independent packaged reader, then use its canonical export with the owning ACT adapter. An assembled canonical file or exported Parquet is not source verification. Two bounded observations (one per variant) are accepted. Four remaining replicates are held until separately authorized; earlier pilot sequencing instructions are historical. The target is three valid measurements per variant; observed domain failure can be valid data, while capture/instrument failures remain separate attempts.
 
 Legacy analysis scripts are retained for historical datasets. Fresh results use the versioned Experiment canonical envelope and the ACT canonical adapter; they must not be passed to the legacy PhaseCapture loader.
+
+## Live results and fixture custody
+
+The default `scripts/analyze_fresh.py` command requires `--launch-manifest` in
+addition to its original result/export/reader/evidence arguments. It binds the
+actual launch record to the immutable Experiment result before admitting rows to
+ACT. `SYNTHETIC_FIXTURE` and `FIXTURE` produce an empty live input population:
+zero trials, successes and spend contribution, with no live coverage or J.
+Missing or ambiguous launch provenance refuses. Generic Experiment results and
+diagnostic ACT tables alone are not live qualification.
+
+The production pipeline supplies the exact manifest and stops before ACT for an
+excluded population. Native candidate acceptance recomputes that same admission.
+Historical diagnostic projections and nine-table fixture outputs remain frozen.
+The canned child/template/test corpus now live only in test resources and are
+absent from the production application JAR. The native guard checks both selected
+file names and JAR members, source drift and exact artifacts before authorization.
+This removes supplied fixture inputs; the subject's ordinary filesystem read
+access still permits reading other user-readable host files.
