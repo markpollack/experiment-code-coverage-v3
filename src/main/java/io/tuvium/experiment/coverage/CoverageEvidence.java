@@ -29,7 +29,7 @@ public final class CoverageEvidence {
         Path log = evidence.resolve(name + ".log");
         if (Files.exists(log)) throw new IOException("Refusing build evidence overwrite");
         var command = new ArrayList<String>();
-        command.add(workspace.resolve("mvnw").toString());
+        command.add(Boolean.getBoolean("coverage.candidateBuild")?"./mvnw":workspace.resolve("mvnw").toString());
         boolean candidate=Boolean.getBoolean("coverage.candidateBuild");
         if(!candidate){command.add("-B"); command.add("-ntp");
         command.add("-Dmaven.repo.local=" + System.getProperty("coverage.mavenRepo"));
@@ -37,7 +37,23 @@ public final class CoverageEvidence {
         command.addAll(List.of(goals));
         write(evidence.resolve(name + "-command.json"), Map.of("argv",command,"budgetMs",budgetMs,"workspace",workspace.toString()));
         long start=System.nanoTime();
-        var builder=new ProcessBuilder(command).directory(workspace.toFile()).redirectErrorStream(true).redirectOutput(log.toFile());
+        var executed=new ArrayList<String>(command);
+        Path buildHome=evidence.resolve("build-home");
+        if(candidate) {
+            Files.createDirectories(buildHome);
+            executed=new ArrayList<>(List.of(System.getProperty("coverage.buildSandbox"),"--unshare-all","--die-with-parent","--new-session"));
+            for(String path:List.of("/usr","/etc","/bin","/lib","/lib64"))executed.addAll(List.of("--ro-bind",path,path));
+            executed.addAll(List.of("--proc","/proc","--dev","/dev","--tmpfs","/tmp"));
+            for(Path path:List.of(workspace,buildHome))
+                executed.addAll(List.of("--bind",path.toString(),path.toString()));
+            executed.addAll(List.of("--ro-bind",System.getProperty("coverage.mavenRepo"),System.getProperty("coverage.mavenRepo")));
+            executed.addAll(List.of("--ro-bind",System.getProperty("java.home"),System.getProperty("java.home"),"--chdir",workspace.toString(),"--"));
+            executed.addAll(command);
+            write(evidence.resolve(name+"-sandbox.json"),Map.of("argv",executed,"network","UNSHARED","pidNamespace","UNSHARED",
+                    "writableRoots",List.of(workspace.toString(),buildHome.toString()),"readOnlyMavenRoot",System.getProperty("coverage.mavenRepo"),
+                    "readableSystemRoots",List.of("/usr","/etc","/bin","/lib","/lib64",System.getProperty("java.home"))));
+        }
+        var builder=new ProcessBuilder(executed).directory(workspace.toFile()).redirectErrorStream(true).redirectOutput(log.toFile());
         if(candidate) {
             var environment=builder.environment();environment.clear();
             Path home=Files.createDirectories(evidence.resolve("build-home"));
@@ -52,7 +68,7 @@ public final class CoverageEvidence {
         if (!done) {
             var children=process.descendants().toList();
             children.forEach(ProcessHandle::destroy); process.destroy();
-            process.waitFor(candidate?15000:2000,TimeUnit.MILLISECONDS);
+            process.waitFor(candidate?13000:2000,TimeUnit.MILLISECONDS);
             children.stream().filter(ProcessHandle::isAlive).forEach(ProcessHandle::destroyForcibly);
             if (process.isAlive()) process.destroyForcibly();
             process.waitFor(2000,TimeUnit.MILLISECONDS);

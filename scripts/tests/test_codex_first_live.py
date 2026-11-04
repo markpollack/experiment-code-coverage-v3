@@ -8,9 +8,18 @@ import unittest
 
 def load(name):
     spec=importlib.util.spec_from_file_location(name,Path(__file__).parents[1]/(name+'.py'));m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
-surface=load('codex_candidate_surface');guard=load('run_codex_candidate')
+surface=load('codex_candidate_surface');guard=load('run_codex_candidate');policy=load('codex_first_policy')
 
 class FirstLiveTest(unittest.TestCase):
+    def test_native_wrapper_requires_one_workspace_request_and_selects_exact_profile(self):
+        args=policy.native_arguments(['--no-daemon','--ask-for-approval','never','-C','/tmp/subject','exec','--json','--sandbox','workspace-write','--model','gpt-6-luna','-c','model_reasoning_effort="high"','prompt'],'/tmp/subject','/tmp/cache')
+        self.assertNotIn('--sandbox',args)
+        self.assertIn('default_permissions="v3_first"',args)
+        self.assertIn('--ignore-user-config',args)
+        self.assertIn('permissions.v3_first.filesystem={"/"="read","/tmp/subject"="write","/tmp/cache"="write"}',args)
+        for invalid in (['exec','prompt'],['exec','--sandbox','danger-full-access','prompt'],['exec','--sandbox','workspace-write','resume','id']):
+            with self.assertRaises(ValueError):policy.native_arguments(invalid,'/tmp/subject','/tmp/cache')
+
     def test_final_inventory_accepts_patch_without_shell_interpretation(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);(root/'src/test').mkdir(parents=True);(root/'pom.xml').write_text('protected')
@@ -35,10 +44,10 @@ class FirstLiveTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'Type'):surface.validate(before,surface.inventory(root))
     def test_missing_mismatch_expired_policy_approval_and_exclusive_reservation(self):
         with tempfile.TemporaryDirectory() as d:
-            data={'outputDirectory':d+'/out','runId':'run','policy':'FINAL_INVENTORY_TEST_PATCH','attemptLedger':d+'/ledger'}
-            approval={'nativeAuthorization':True,'approvedSubmissions':1,'manifestSha256':'hash','outputDirectory':data['outputDirectory'],'runId':'run','ownerReference':'fixture','expiresEpochSeconds':time.time()+60,'acceptedPolicy':data['policy'],'acceptsUncontainedBuild':True}
+            data={'outputDirectory':d+'/out','runId':'run','policy':'FINAL_INVENTORY_TEST_PATCH','buildBoundary':'BWRAP_ISOLATED','attemptLedger':d+'/ledger'}
+            approval={'nativeAuthorization':True,'approvedSubmissions':1,'manifestSha256':'hash','outputDirectory':data['outputDirectory'],'runId':'run','ownerReference':'fixture','expiresEpochSeconds':time.time()+60,'acceptedPolicy':data['policy'],'acceptedBuildBoundary':'BWRAP_ISOLATED'}
             guard.authorize(data,'hash',approval)
-            for a in (None,dict(approval,manifestSha256='wrong'),dict(approval,outputDirectory='wrong'),dict(approval,expiresEpochSeconds=0),dict(approval,acceptsUncontainedBuild=False)):
+            for a in (None,dict(approval,manifestSha256='wrong'),dict(approval,outputDirectory='wrong'),dict(approval,expiresEpochSeconds=0),dict(approval,acceptedBuildBoundary='UNKNOWN')):
                 with self.assertRaises(ValueError):guard.authorize(data,'hash',a)
             guard.reserve(data,'hash')
             with self.assertRaises(FileExistsError):guard.reserve(data,'hash')

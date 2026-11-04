@@ -1,18 +1,20 @@
 """Final-inventory acceptance for the separately approved first Codex policy."""
 import argparse
 import json
+import re
 from pathlib import Path
 import importlib.util
 _spec=importlib.util.spec_from_file_location("candidate_core",Path(__file__).with_name("verify_codex_candidate.py"))
 _core=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(_core)
 inventory,apply_patch,confined,is_test=_core.inventory,_core.apply_patch,_core.confined,_core.is_test
 
+TARGET_FILES = {'target/checkstyle-cachefile','target/checkstyle-checker.xml','target/checkstyle-header.txt','target/checkstyle-result.xml','target/test-ids'}
 TARGET_ROOTS = {'classes', 'test-classes', 'generated-sources', 'generated-test-sources',
                 'maven-status', 'surefire', 'surefire-reports'}
 
 def generated(name):
     parts = name.split('/')
-    return (name == 'target' or name == 'target/jacoco.exec' or name == 'target/site' or name == 'target/site/jacoco' or name.startswith('target/site/jacoco/') or
+    return (bool(re.fullmatch(r'target/test-ids/junit-platform-unique-ids-[0-9]+\.txt',name)) or name in TARGET_FILES or name == 'target' or name == 'target/jacoco.exec' or name == 'target/site' or name == 'target/site/jacoco' or name.startswith('target/site/jacoco/') or
             len(parts) > 1 and parts[0] == 'target' and parts[1] in TARGET_ROOTS)
 
 

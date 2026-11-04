@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 import os
+import stat
 from pathlib import Path
 import signal
 import subprocess
@@ -31,7 +32,7 @@ def validate(data):
     for ref in data['files']:
         path=Path(ref['path']);require(path.is_absolute() and path.resolve(strict=True)==path and path.is_file(),'Ordinary exact artifact required')
         require(sha(path)==ref['sha256'],'Changed artifact: '+str(path));selected[str(path)]=ref['sha256']
-    for key in ('javaExecutable','launcherPython','actPython','timeoutExecutable','codexExecutable','readerSource','mappingScript','candidateSurface','launcher','pipelineLauncher'):
+    for key in ('javaExecutable','launcherPython','actPython','timeoutExecutable','codexExecutable','readerSource','mappingScript','candidateSurface','launcher','pipelineLauncher','buildSandbox','nativeExecutable','wrapperPolicy','candidateAcceptance'):
         require(str(Path(data[key]).resolve(strict=True)) in selected,'Unhashed launch component: '+key)
     require(data['launcher']==str(Path(__file__).resolve()),'Wrong installed guard')
     for key in ('runtimeClasspath','readerClasspath'):
@@ -46,6 +47,17 @@ def validate(data):
     for key in ('subjectMavenRepository','mavenRepository'):
         require(not Path(data[key]).is_relative_to(root),'Prepared caches must survive clean outside output')
     require(data['runId'] and data['projectRoot'],'Pinned run/project required')
+    require(data['cacheInventory'] in selected,'Unhashed prepared cache inventory')
+    caches=json.loads(Path(data['cacheInventory']).read_text())
+    require(set(caches)=={data['mavenRepository'],data['subjectMavenRepository']},'Wrong cache roots')
+    for root,entries in caches.items():
+        actual=set()
+        for path in Path(root).rglob('*'):
+            if path.is_symlink():raise ValueError('Symbolic cache entry')
+            if path.is_dir():continue
+            require(path.is_file(),'Special cache entry');name=path.relative_to(root).as_posix();actual.add(name)
+            require(entries.get(name)=={'sha256':sha(path),'mode':stat.S_IMODE(path.stat().st_mode)},'Changed prepared cache: '+str(path))
+        require(actual==set(entries),'Prepared cache population changed')
     return env
 
 def authorize(data,manifest_hash,activation):
@@ -55,7 +67,7 @@ def authorize(data,manifest_hash,activation):
     require(activation.get('outputDirectory')==data['outputDirectory'] and activation.get('runId')==data['runId'],'Approval output/run mismatch')
     require(bool(activation.get('ownerReference')),'Owner reference required')
     require(activation.get('expiresEpochSeconds',0)>time.time(),'Owner activation expired')
-    require(activation.get('acceptedPolicy')==data['policy'] and activation.get('acceptsUncontainedBuild') is True,'Exact policy/build limitation approval required')
+    require(activation.get('acceptedPolicy')==data['policy'] and activation.get('acceptedBuildBoundary')==data.get('buildBoundary')=='BWRAP_ISOLATED','Exact policy/build boundary approval required')
 
 def reserve(data,manifest_hash):
     ledger=Path(data['attemptLedger']);require(not ledger.is_symlink(),'Symbolic ledger refused')

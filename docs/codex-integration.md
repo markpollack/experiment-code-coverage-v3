@@ -1,5 +1,10 @@
 # Codex consumer integration
 
+Current first-run candidate: final-inventory test-patch policy and exact Owner activation.
+The section [below](#first-live-readiness-policy) supersedes earlier candidate
+implementation holds; historical Claude preventive restrictions are unchanged.
+
+
 The V3 owner accepts the bounded deterministic consumer scope. This is a new
 provider route, not a replacement for accepted Claude evidence. Runtime admission
 belongs to Experiment; acquisition and immutable decisions belong to Client;
@@ -232,3 +237,48 @@ authored patch and cache roots survive clean. Submitted tests execute as the har
 user unless an existing restricted environment is demonstrated. Environmental
 credential removal is not filesystem confinement. Exact limitations return for
 Owner decision. No live task is authorized by this preparation disposition.
+
+### Exact candidate boundaries
+
+The installed wrapper requires the actual Client argv: fresh non-daemon execution,
+approval never, requested workspace-write, Luna/high and exact workspace. It
+replaces the legacy sandbox flag with one explicit named filesystem profile:
+readable filesystem, writable subject workspace and its dedicated prepared Maven
+cache, network disabled. It ignores user configuration and exec rules, and forces
+the existing ChatGPT subscription route. A reduced parent environment contains no
+API-key fallback. This does not prevent subject commands reading ordinary user-
+readable files. A local argv probe and model-free sandbox probes qualify these
+configured roots; native execution remains separately unexercised.
+
+Independent test builds use the installed bwrap environment with new user, mount,
+PID and network namespaces. Only system/JDK inputs and the prepared Maven cache
+are read-only mounts; fresh verification and an empty build home are writable.
+The normal user home, original cache and subscription/SSH credentials are not
+mounted. The exact foreground command is `./mvnw clean test jacoco:report`, with
+offline Maven/cache/format options supplied by the fixed environment. Cache files
+survive clean; submitted tests cannot modify the read-only verification cache.
+The cache remains writable only in the separately selected subject sandbox.
+
+Final inventory covers file content, creation/deletion, type, mode and symlinks.
+Generated exceptions are exact Maven target subtrees and observed checkstyle/JUnit
+output names; no arbitrary target file is accepted. Only validated test changes
+transfer to a new pinned tree. Both final measurement and the complete deterministic
+Jury rebuild that copy. A final full inventory also rejects changes to the submitted
+test inputs. Original command/tool sources remain in the complete independently
+verified Journal archive; shell/edit-event interpretation is not this policy's gate.
+
+Native admission revalidates the immutable manifest, explicit later Owner approval,
+run/output/executable identity, prepared caches and an exclusive reservation. The
+installed application also claims that exact reservation once before opening Client.
+Missing, expired or foreign approval and repeated claims refuse. Fixture admission
+is distinctly labeled and cannot admit the native mode. The original Client
+response/decision/acquisition, full Jury, packaged reader and all nine ACT tables
+remain mandatory. The final acceptance evaluator distinguishes pipeline completion
+from accepted task/evidence and never infers native quality from canned fixtures.
+
+Limits: one task/generation, no retry, zero judge inference; subject at most 900s,
+Client cleanup 15s, shared pipeline 1785s plus 15s kill grace. Each independent
+build is at most 600s plus 13s termination/2s forced-exit observation, within the
+shared bound. Dollars, tokens, internal turns and number of subject commands have
+no hard cap. Unknown cost stays unknown. Final inventory cannot rule out transient
+subject writes or earlier effects; established contrary effects still reject.

@@ -97,7 +97,7 @@ def inside(manifest, root, run_id):
     provider_args = (['--codex-executable',data['codexExecutable'],'--codex-candidate-mode',data['candidateMode']]
                      if data.get('candidateMode') else ['--codex-executable', data['codexExecutable'], '--codex-fixture-mode', data['fixtureMode']]
                      if data.get('provider') == 'CODEX' else ['--claude-executable', data['claudeExecutable']])
-    execute([data['javaExecutable'], '-Dcoverage.mavenRepo=' + repo, *(['-Dcoverage.candidatePython='+data['launcherPython'], '-Dcoverage.candidateSurface='+data['candidateSurface'], '-Dcoverage.candidateBuild=true', '-Dcoverage.candidateGuard='+data['launcher'], '-Dcoverage.candidateManifest='+str(manifest)] if data.get('candidateMode') else []), '-cp', os.pathsep.join(data['runtimeClasspath']),
+    execute([data['javaExecutable'], '-Dcoverage.mavenRepo=' + repo, *(['-Dcoverage.candidatePython='+data['launcherPython'], '-Dcoverage.candidateSurface='+data['candidateSurface'], '-Dcoverage.candidateBuild=true', '-Dcoverage.buildSandbox='+data['buildSandbox'], '-Dcoverage.candidateGuard='+data['launcher'], '-Dcoverage.candidateManifest='+str(manifest)] if data.get('candidateMode') else []), '-cp', os.pathsep.join(data['runtimeClasspath']),
              'io.tuvium.experiment.coverage.NativeCoverageApp', '--project-root', data['projectRoot'],
              '--output-dir', str(app), '--run-id', run_id, '--attempt-ledger', data['attemptLedger'],
              '--outer-deadline', env['V3_SOFT_DEADLINE_EPOCH_MS']] + provider_args,
@@ -114,6 +114,8 @@ def inside(manifest, root, run_id):
              '--evidence', str(app), '--output', str(inputs), '--mapping-only', 'true'], root / 'mapping.log', env)
     execute([data['actPython'], '-I', '-m', 'agent_control_theory.canonical', '--inputs', str(inputs),
              '--output', str(root / 'act')], root / 'act.log', env)
+    if data.get('candidateMode'):
+        execute([data['launcherPython'],data['candidateAcceptance'],'--root',str(root),'--manifest',str(manifest),'--output',str(root/'candidate-acceptance.json')],root/'candidate-acceptance.log',env)
     write(root / 'pipeline-completion.json', {'status': 'COMPLETE', 'result': str(result),
           'resultSha256': sha(result), 'exportSha256': sha(reader / 'canonical.jsonl'),
           'actManifestSha256': sha(root / 'act/manifest.json'), 'actualCostState': 'UNKNOWN',
