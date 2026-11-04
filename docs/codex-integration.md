@@ -353,3 +353,29 @@ prepared-cache/policy/manifest offer supersedes the old launch proposal without
 mutating it. The new policy preserves existing semantics with new exact roots and
 an explicit fixture-free provided-input boundary. Ordinary user-readable host
 files remain readable; retained historical corpora are not claimed inaccessible.
+
+## Composed invocation qualification
+
+The selected SDK owns provider defaults and prompt transport. V3 translates the
+selected workspace-write request into its existing exact named filesystem policy
+and experiment activation remains in the guarded launcher. Qualification must
+capture the final argv from the installed SDK/wrapper boundary, then exercise the
+installed provider parser using a proven no-generation mechanism. Presence checks
+or a help path that skips argument validation cannot qualify composition. The
+original duplicate-flag refusal remains a regression control. No live task is
+authorized by this deterministic repair.
+
+The wrapper now accepts the exact selected SDK stdin shape, preserves its single
+`--ignore-user-config`, and injects only V3-owned policy/config translation. Changes
+to the shape, duplicate defaults, override options, model/effort, cwd, sandbox or
+prompt transport fail closed. Non-exec passthrough is limited to version/login
+status preflight. A provider/SDK upgrade requires requalification of this boundary.
+
+`test_codex_composition.py` is the neutral regression. `probe_codex_parser.py`
+consumes an actual instrumented `os.execv` capture and passes its argv unchanged to
+the installed executable with empty forced stdin. It requires corrected exit1 at
+`No prompt provided via stdin.`, original duplicate exit2, and unknown-option exit2.
+Network is unshared, host mounts read-only, and the environment contains no auth
+credentials. Version0.166.0's exec source resolves stdin before creating its
+in-process client/thread/turn. This checks parsing and startup admission; generation,
+subscription behavior and task/archive acceptance remain separate live gates.

@@ -1,5 +1,18 @@
 # V3 roadmap
 
+## Returned model-free launch composition repair
+
+The owner authorizes a model-free correction at the selected SDK → V3 wrapper →
+installed executable boundary. Preserve the consumed failed attempt and all frozen
+inputs. Trace option ownership, reject conflicting input, add neutral composition
+regressions and validate the installed parser without generation. Full offline
+gates precede a separately named inert successor packet. Client remains paused;
+any native task requires separate exact-packet activation. Check relevant steering
+at safe boundaries. Offline Java35 and Python44 checks pass; the installed parser
+accepts corrected argv up to its explicit empty-stdin stop and rejects the original
+duplicate. The exact successor packet and private owning receipt close this grant
+after independent consumption; native approval remains separate.
+
 ## Bounded onboarding qualification implementation
 
 The owner accepts deterministic fixture-exclusion verification and a fixture-free

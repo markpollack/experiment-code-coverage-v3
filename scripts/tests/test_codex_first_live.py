@@ -12,10 +12,10 @@ surface=load('codex_candidate_surface');guard=load('run_codex_candidate');policy
 
 class FirstLiveTest(unittest.TestCase):
     def test_native_wrapper_requires_one_workspace_request_and_selects_exact_profile(self):
-        args=policy.native_arguments(['--no-daemon','--ask-for-approval','never','-C','/tmp/subject','exec','--json','--sandbox','workspace-write','--model','gpt-6-luna','-c','model_reasoning_effort="high"','prompt'],'/tmp/subject','/tmp/cache')
+        args=policy.native_arguments(['--no-daemon','--ask-for-approval','never','--sandbox','workspace-write','-C','/tmp/subject','exec','--ignore-user-config','--model','gpt-6-luna','-c','model_reasoning_effort="high"','--skip-git-repo-check','--json','--','-'],'/tmp/subject','/tmp/cache')
         self.assertNotIn('--sandbox',args)
         self.assertIn('default_permissions="v3_first"',args)
-        self.assertIn('--ignore-user-config',args)
+        self.assertEqual(1,args.count('--ignore-user-config'))
         self.assertIn('permissions.v3_first.filesystem={"/"="read","/tmp/subject"="write","/tmp/cache"="write"}',args)
         for invalid in (['exec','prompt'],['exec','--sandbox','danger-full-access','prompt'],['exec','--sandbox','workspace-write','resume','id']):
             with self.assertRaises(ValueError):policy.native_arguments(invalid,'/tmp/subject','/tmp/cache')
