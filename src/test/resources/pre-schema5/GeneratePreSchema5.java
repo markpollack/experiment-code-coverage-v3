@@ -60,7 +60,10 @@ public final class GeneratePreSchema5 {
         new FileSystemResultStore(BASE.resolve("parent-store")).save(new Result(AgentRecords.CURRENT_SCHEMA_VERSION,
                 "AGENT_CANONICAL", identity.runId(), "coverage-v3-pilot", 100, List.of(parentRow), List.of()));
 
-        // Experiment 91817ec's own schema 4 fixture verdict, unchanged (experiment-runtime/src/test/resources/schema4/workflow-succeeded.json).
+        // The verdict is copied unchanged from Experiment's schema 4 fixture
+        // experiment-runtime/src/test/resources/schema4/workflow-succeeded.json. That file is not in 91817ec:
+        // a8014cc checked it in, and its README says the 91817ec store wrote it. Pass its path from a current
+        // Experiment checkout; the writer on this classpath is still the 91817ec JAR.
         var experimentFixture = (ObjectNode) CoverageEvidence.JSON.readTree(Path.of(args[0]).toFile());
         var verdict = CoverageEvidence.JSON.treeToValue(experimentFixture.path("items").path(0).path("verdicts").path(0), VerdictDocument.class);
         var assessedRow = new Row(identity, List.of(invocation), "SUCCEEDED", domain, List.of(verdict), "RETURNED", "",

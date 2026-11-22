@@ -8,17 +8,28 @@ import java.time.Duration;
 import java.util.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import static org.assertj.core.api.Assertions.*;
 
 @Timeout(30)
 class CodexCoverageClientTest {
     @TempDir Path root;
     static final String FOREIGN_REFUSAL="Native binding mismatch: acquisition_uid";
-    @Test void packagedLocalChildPreservesOriginalDecisionAndAdmitsQualifiedArchive() throws Exception {
+    /**
+     * DIRECT: started through Client by the test itself. WORKFLOW: the shape V3's production route
+     * gives a Workflow Step attempt (NativeCoverageApp.Invoke), whose provenance Experiment records
+     * under the Workflow keys.
+     */
+    @ParameterizedTest @EnumSource(ExecutionKind.class)
+    void packagedLocalChildPreservesOriginalDecisionAndAdmitsQualifiedArchive(ExecutionKind kind) throws Exception {
         var fixture=fixture();
         try(var client=CodexCoverageClient.openFixture(fixture.workspace(),fixture.evidence(),fixture.child().toString(),"success")) {
-            // Started directly through Client, not by a Workflow step: a direct attempt (schema 5).
-            var attempt=Attempt.direct(Identity.of("codex-fixture","item","simple",0),"invocation",1);
+            var identity=Identity.of("codex-fixture","item","simple",0);
+            var attempt=kind==ExecutionKind.DIRECT?Attempt.direct(identity,"invocation",1)
+                    :new Attempt(identity,UUID.randomUUID().toString(),UUID.randomUUID().toString(),
+                            "sha256:"+Evidence.sha256("invoke-native".getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                            UUID.randomUUID().toString(),1);
             var started=new AsyncClientInvocationService(client).start(attempt,fixture.workspace(),"exact pinned prompt",Duration.ofSeconds(10));
             var response=started.execution().result();var decision=started.decision().orElseThrow();
             var observed=NativeAttemptCustody.returned(started,response);
@@ -36,6 +47,17 @@ class CodexCoverageClientTest {
                     fixture.evidence().resolve("journal/native-"+decision.executionId()),events,10000,1000);
             assertThat(invocation.attempt()).isEqualTo(attempt);assertThat(invocation.responseText()).isEqualTo(response.getResult());
             assertThat(started.decision().orElseThrow()).isSameAs(decision);Evidence.verify(invocation.canonical().getFirst());
+            // accept() checked the recorded decision's correlation in the kind's own branch.
+            var correlation=decision.correlation();
+            assertThat(correlation.experimentInvocationId()).contains(attempt.invocationId());
+            if(kind==ExecutionKind.WORKFLOW) {
+                assertThat(correlation.workflowRunId()).contains(attempt.workflowRunId());
+                assertThat(correlation.workflowInvocationId()).contains(attempt.workflowInvocationId());
+                assertThat(correlation.workflowAttemptId()).contains(attempt.workflowAttemptId());
+            } else {
+                assertThat(correlation.workflowRunId()).isEmpty();
+                assertThat(correlation.workflowAttemptId()).isEmpty();
+            }
             var changed=fixture.evidence().resolve("foreign.json");
             var manifest=CoverageEvidence.JSON.readTree(Path.of(invocation.acquisitions().getFirst().path()).toFile());
             ((com.fasterxml.jackson.databind.node.ObjectNode)manifest).put("acquisition_uid","foreign");CoverageEvidence.write(changed,manifest);

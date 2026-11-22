@@ -10,8 +10,8 @@ import static org.assertj.core.api.Assertions.*;
 
 /**
  * Records written before Experiment runtime schema 5 keep their meaning. The fixtures under
- * {@code src/test/resources/pre-schema5} were written by Experiment 91817ec (schema 4); see its
- * README. Their FileRefs are relative to the project root, which is the test working directory.
+ * {@code src/test/resources/pre-schema5} were written by Experiment 91817ec (schema 4); see
+ * {@code docs/current-snapshots-2026-11-22.md} for their provenance. Their FileRefs are relative to the project root, which is the test working directory.
  */
 class PreSchemaFiveTest {
     static final Path BASE = Path.of("src/test/resources/pre-schema5");
