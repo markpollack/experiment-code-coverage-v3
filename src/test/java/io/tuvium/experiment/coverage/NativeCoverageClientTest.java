@@ -15,6 +15,9 @@ import static org.assertj.core.api.Assertions.*;
 @Timeout(30)
 class NativeCoverageClientTest {
     @TempDir Path root;
+    /** Client's package-private one-shot capture limit; the fixture's overflow mode writes past it. */
+    static final long OVERFLOW_LIMIT_BYTES = 256L * 1024 * 1024;
+    static final long OVERFLOW_STDERR_BYTES = OVERFLOW_LIMIT_BYTES + 64 * 1024;
 
     @Test void configuredModelCapAndRequiredAllowDenyHookReachSubprocess() throws Exception {
         var fixture = fixture();
@@ -72,7 +75,15 @@ class NativeCoverageClientTest {
             assertThat(execution.result().isSuccessful()).isTrue();
             var acquired = source.get(10, TimeUnit.SECONDS);
             assertThat(acquired.complete()).isFalse();
-            assertThat(Files.readString(acquired.manifest())).contains("Bounded source buffer dropped");
+            // Client 84c17d9f: one 256 MiB limit across all streams, named with the dropped count.
+            var named = java.util.regex.Pattern.compile("Capture limit of (\\d+) bytes reached; dropped (\\d+) bytes")
+                    .matcher(Files.readString(acquired.manifest()));
+            assertThat(named.find()).as("capture names the limit and the dropped bytes").isTrue();
+            long limit = Long.parseLong(named.group(1)), dropped = Long.parseLong(named.group(2));
+            assertThat(limit).isEqualTo(OVERFLOW_LIMIT_BYTES);
+            assertThat(OVERFLOW_STDERR_BYTES).isGreaterThan(limit);
+            // At most `limit` bytes are held, so at least the stderr excess is dropped (stdout adds to the total).
+            assertThat(dropped).isGreaterThanOrEqualTo(OVERFLOW_STDERR_BYTES - limit);
         }
         assertDead(fixture);
     }

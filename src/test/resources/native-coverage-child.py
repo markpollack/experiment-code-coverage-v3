@@ -42,7 +42,10 @@ for line in sys.stdin:
         if mode == 'wait':
             while True: time.sleep(.05)
         if mode == 'overflow':
-            sys.stderr.write('x' * (4*1024*1024 + 65536));sys.stderr.flush();finish()
+            # Exceed Client's 256 MiB one-shot capture limit (Client 84c17d9f) by 64 KiB, in 1 MiB lines.
+            line = b'x' * (1024*1024 - 1) + b'\n'
+            for _ in range(256): sys.stderr.buffer.write(line)
+            sys.stderr.buffer.write(b'y' * 65535 + b'\n');sys.stderr.flush();finish()
         if mode == 'budget-exhausted':
             send({'type':'result','subtype':'error_max_budget_usd','is_error':True,'duration_ms':1,
                   'duration_api_ms':1,'num_turns':1,'result':'cap reached','session_id':'fixture-native'})
