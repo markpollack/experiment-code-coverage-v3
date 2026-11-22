@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.*;
 @Timeout(30)
 class CodexCoverageClientTest {
     @TempDir Path root;
+    static final String FOREIGN_REFUSAL="Native binding mismatch: acquisition_uid";
     @Test void packagedLocalChildPreservesOriginalDecisionAndAdmitsQualifiedArchive() throws Exception {
         var fixture=fixture();
         try(var client=CodexCoverageClient.openFixture(fixture.workspace(),fixture.evidence(),fixture.child().toString(),"success")) {
@@ -26,6 +27,9 @@ class CodexCoverageClientTest {
             assertThat(response.getResult()).isEqualTo("answer:exact pinned prompt");
             assertThat(started.execution().recording().delivery()).as(started.execution().recording().delivery().toString()).isInstanceOf(TerminalDelivery.Completed.class);
             var completed=(TerminalDelivery.Completed)started.execution().recording().delivery();
+            var nativeRecording=started.execution().recording().nativeRecording().orElseThrow();
+            assertThat(nativeRecording.outcome()).as(nativeRecording.toString()).isEqualTo(NativeRecording.Outcome.ATTACHED);
+            assertThat(nativeRecording.acquisitionProfile()).contains("codex-cli-"+CodexCoverageClient.VERSION+"-exec-stdio-rollout");
             Path events=NativeCoverageApp.selectPrepared(fixture.evidence().resolve("journal"),completed.bindingId(),decision.executionId(),decision.decisionId());
             var invocation=NativeClientInvocation.accept(started,termination,CodexCoverageClient.originalManifest(fixture.evidence()),
                     fixture.evidence().resolve("journal/native-"+decision.executionId()),events,10000,1000);
@@ -34,7 +38,8 @@ class CodexCoverageClientTest {
             var changed=fixture.evidence().resolve("foreign.json");
             var manifest=CoverageEvidence.JSON.readTree(Path.of(invocation.acquisitions().getFirst().path()).toFile());
             ((com.fasterxml.jackson.databind.node.ObjectNode)manifest).put("acquisition_uid","foreign");CoverageEvidence.write(changed,manifest);
-            assertThatThrownBy(()->NativeClientInvocation.accept(started,termination,changed,fixture.evidence().resolve("journal/native-"+decision.executionId()),events,10000,1000)).isInstanceOf(Exception.class);
+            assertThatThrownBy(()->NativeClientInvocation.accept(started,termination,changed,fixture.evidence().resolve("journal/native-"+decision.executionId()),events,10000,1000))
+                    .isInstanceOf(java.io.IOException.class).hasMessageContaining(FOREIGN_REFUSAL);
         }
     }
     @Test void failedResultAndWrongCaptureRetainOriginalOutcomeWithoutAdmission() throws Exception {
@@ -53,7 +58,23 @@ class CodexCoverageClientTest {
                     assertThatThrownBy(()->NativeClientInvocation.accept(started,termination,fixture.evidence().resolve("unused"),fixture.evidence().resolve("unused-q"),fixture.evidence().resolve("unused-events"),10000,1000))
                             .hasMessageContaining("Only elected SUCCESS");
                 }
-                else {assertThat(response.isSuccessful()).isTrue();assertThat(started.execution().recording().delivery()).isInstanceOf(TerminalDelivery.Failed.class);}
+                else {
+                    // Client's Codex capture sees a foreign native session and seals an incomplete acquisition.
+                    // The recorder still delivers one evidence-only binding and reports REJECTED, so the
+                    // delivery completes (before the native-generation path V3 failed the delivery instead).
+                    // Admission is refused either way.
+                    assertThat(response.isSuccessful()).isTrue();
+                    assertThat(started.execution().recording().delivery()).isInstanceOf(TerminalDelivery.Completed.class);
+                    var nativeRecording=started.execution().recording().nativeRecording().orElseThrow();
+                    assertThat(nativeRecording.outcome()).as(nativeRecording.toString()).isEqualTo(NativeRecording.Outcome.REJECTED);
+                    assertThat(nativeRecording.detail()).contains("Native acquisition is incomplete");
+                    assertThat(started.execution().recording().evidence().acquisition()).isEqualTo(CaptureAcquisition.INCOMPLETE);
+                    var completed=(TerminalDelivery.Completed)started.execution().recording().delivery();
+                    Path events=NativeCoverageApp.selectPrepared(fixture.evidence().resolve("journal"),completed.bindingId(),decision.executionId(),decision.decisionId());
+                    assertThatThrownBy(()->NativeClientInvocation.accept(started,termination,CodexCoverageClient.originalManifest(fixture.evidence()),
+                            fixture.evidence().resolve("journal/native-"+decision.executionId()),events,10000,1000))
+                            .hasMessageContaining("Incomplete or unrelated terminal recording");
+                }
             }
         }
     }

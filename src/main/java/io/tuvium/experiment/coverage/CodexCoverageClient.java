@@ -1,15 +1,10 @@
 package io.tuvium.experiment.coverage;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.*;
 import io.github.markpollack.agents.client.*;
 import io.github.markpollack.agents.client.journal.JournalExecutionRecorder;
 import io.github.markpollack.agents.client.codex.*;
 import io.github.markpollack.experiment.runtime.Evidence;
-import io.github.markpollack.journal.ocsf.writer.*;
-import io.github.markpollack.journal.tck.ocsf.*;
 import java.nio.file.*;
-import java.time.Duration;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -82,66 +77,42 @@ public final class CodexCoverageClient {
         Evidence.verify(ref);return Path.of(ref.path());
     }
 
+    /**
+     * V3 keeps its own reference to the provider's original sealed manifest, then hands the
+     * sealed generation to Client's Journal recorder, which qualifies it with Journal's
+     * qualifier for the acquisition profile, binds the qualified sources and delivers one
+     * binding. V3 neither qualifies nor assembles the binding itself.
+     */
     private static final class Recorder implements ExecutionRecorder {
-        private final Path evidence, originals;
-        private final JournalExecutionRecorder original;
+        private final Path evidence;
+        private final JournalExecutionRecorder journal;
         Recorder(Path evidence) throws Exception {
-            this.evidence=evidence;this.originals=evidence.resolve("original-decision-store");
-            this.original=new JournalExecutionRecorder(originals,"v3-codex");
+            this.evidence=evidence;
+            Files.createDirectories(evidence.resolve("journal"));
+            this.journal=new JournalExecutionRecorder(evidence.resolve("journal"),"v3-codex");
         }
-        public Supplier<String> prepare(ExecutionDecision decision) { throw new IllegalStateException("Original Codex acquisition required"); }
-        public Supplier<String> prepare(ExecutionDecision decision, Map<String,Object> values) {
-            var source=(CodexAcquisition)values.get("codexAcquisition");
-            var deliver=original.prepare(decision);
-            return () -> {
-                String originalBinding=deliver.get();
-                try {
-                    if(source==null || !source.complete()) throw new IllegalStateException("Original Codex acquisition incomplete");
-                    Path sealed=source.writeManifest(decision);
-                    CoverageEvidence.write(evidence.resolve("codex-original-acquisition-reference.json"),Evidence.reference(sealed,"original-codex-acquisition"));
-                    Files.createDirectories(evidence.resolve("journal"));
-                    Path qualifiedRoot=evidence.resolve("journal/native-"+decision.executionId());
-                    var qualified=io.github.markpollack.journal.tck.ocsf.inventory.CodexAcquisition.qualify(sealed,qualifiedRoot);
-                    Path events=NativeCoverageApp.selectPrepared(originals,originalBinding,decision.executionId(),decision.decisionId());
-                    var pkg=PackageReader.open(events);var binding=TerminalBindingReader.read(pkg.declarations);
-                    var json=CoverageEvidence.JSON;
-                    var envelope=(ObjectNode)json.readTree(pkg.declarations.run().member("terminal_binding").member("terminalEnvelope").text());
-                    var association=(ObjectNode)json.readTree(binding.association());
-                    var manifest=json.readTree(qualified.manifest().toFile());
-                    association.put("acquisition","COMPLETED");association.putNull("priorRevisionId");association.putArray("missing");
-                    ArrayNode sources=association.putArray("sources");
-                    for(var item:manifest.required("sources")) sources.add(occurrence(qualifiedRoot,item,manifest,decision));
-                    sources.add(occurrence(qualifiedRoot,json.createObjectNode().put("path","acquisition.json")
-                            .put("role","manifest").put("origin","qualified-codex-manifest"),manifest,decision));
-                    envelope.put("profile","client-terminal-codex-0.166.0/1");
-                    envelope.put("associationBytes",Base64.getEncoder().encodeToString(canonical(association)));
-                    Files.write(evidence.resolve("codex-terminal-envelope.json"),canonical(envelope),StandardOpenOption.CREATE_NEW);
-                    var receiver=new TerminalReceiver(evidence.resolve("journal"),"v3-codex",WriterOptions.defaults());
-                    var ack=json.readTree(receiver.receive(canonical(envelope),qualifiedRoot));
-                    return ack.required("bindingId").asText();
-                } catch(Exception failure) {
-                    try {var diagnostic=new java.io.StringWriter();failure.printStackTrace(new java.io.PrintWriter(diagnostic));
-                        Files.writeString(evidence.resolve("codex-archive-failure.txt"),diagnostic.toString(),StandardOpenOption.CREATE_NEW);}
-                    catch(Exception custodyFailure) {failure.addSuppressed(custodyFailure);}
-                    throw new IllegalStateException("Codex original-D archive delivery failed: "+failure,failure);
-                }
-            };
+        @Override public boolean takesNativeGeneration() { return true; }
+        @Override public Supplier<String> prepare(ExecutionDecision decision) { throw new IllegalStateException("Original Codex acquisition required"); }
+        /** Called once per decision; Client may call the returned delivery again on a retryable failure. */
+        @Override public Prepared prepareRecording(ExecutionDecision decision, Optional<NativeGeneration> generation) {
+            try {
+                if(generation.isPresent())
+                    CoverageEvidence.write(evidence.resolve("codex-original-acquisition-reference.json"),
+                            Evidence.reference(generation.get().manifest(),"original-codex-acquisition"));
+            } catch(Exception failure) {
+                retain(failure);
+                throw new IllegalStateException("Codex original acquisition reference failed: "+failure,failure);
+            }
+            var prepared=journal.prepareRecording(decision,generation);
+            return new Prepared(() -> {
+                try {return prepared.delivery().get();}
+                catch(RuntimeException failure) {retain(failure);throw failure;}
+            },prepared.nativeRecording());
         }
-    }
-    private static ObjectNode occurrence(Path base,JsonNode item,JsonNode manifest,ExecutionDecision decision) throws Exception {
-        String path=item.required("path").asText();byte[] bytes=Files.readAllBytes(base.resolve(path));
-        String stream=Map.of("stdin","STDIN","stream","STDOUT","stderr","STDERR").get(item.required("role").asText());
-        return CoverageEvidence.JSON.createObjectNode().put("sourceId",path).put("relativePath",path)
-                .put("origin",item.required("origin").asText()).put("sha256",Evidence.sha256(bytes)).put("size",bytes.length)
-                .put("start",0).put("end",bytes.length).put("stream",stream)
-                .put("nativeSessionId",manifest.required("run").required("session_uid").asText()).putNull("nativeTurnId")
-                .putNull("nativeConnectionId").put("clientConnectionId",decision.connectionId().orElseThrow());
-    }
-    private static byte[] canonical(JsonNode value) throws Exception { return CoverageEvidence.JSON.writeValueAsBytes(sorted(value)); }
-    private static JsonNode sorted(JsonNode value) {
-        if(value.isObject()) {var out=CoverageEvidence.JSON.createObjectNode();var fields=new TreeMap<String,JsonNode>();
-            value.fields().forEachRemaining(e->fields.put(e.getKey(),e.getValue()));fields.forEach((key,v)->out.set(key,sorted(v)));return out;}
-        if(value.isArray()) {var out=CoverageEvidence.JSON.createArrayNode();value.forEach(v->out.add(sorted(v)));return out;}
-        return value;
+        private void retain(Exception failure) {
+            try {var diagnostic=new java.io.StringWriter();failure.printStackTrace(new java.io.PrintWriter(diagnostic));
+                Files.writeString(evidence.resolve("codex-archive-failure.txt"),diagnostic.toString(),StandardOpenOption.CREATE_NEW);}
+            catch(Exception custodyFailure) {failure.addSuppressed(custodyFailure);}
+        }
     }
 }
