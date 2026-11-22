@@ -1,7 +1,7 @@
 # Coverage experiment v3
 
 **Current state: main is the sole development line. Bounded async validation preparation is active; native execution remains gated on exact upstream qualification and enforced launch controls.**
-Read the [current disposition](docs/house-in-order.md), [frozen tested baseline](docs/current-baseline.md) [roadmap](docs/ROADMAP.md) and [async validation design](docs/async-validation.md) first.
+Read the [current disposition](docs/house-in-order.md), [frozen tested baseline](docs/current-baseline.md), [current snapshot gate](docs/current-snapshots-2026-11-22.md), [roadmap](docs/ROADMAP.md) and [async validation design](docs/async-validation.md) first.
 
 The application runs the checked-in partial PetClinic task using the original simple and hardened-skills prompts, Claude Sonnet 4.6, and the shared Experiment canonical runtime. Java 21 is required.
 
@@ -9,13 +9,16 @@ The three concrete Workflow 0.14 stages prepare and measure the baseline, invoke
 
 T0 checks the real Maven build. T1 requires positive coverage improvement and at least 85% line coverage. T2 retains all six original rubric entries, equal weighting and the executable 0.5 threshold; 0.80 convergence is reported separately. Missing or malformed measurements and judge output are instrument errors. Workflow success alone does not establish task or capture success.
 
-Verify offline with the current declared development artifacts installed from exact producer receipts in an isolated Maven repository (`V3_M2`). These artifacts are local, not published:
+Verify offline against the current Client, Journal and Experiment development snapshots in `~/.m2`. The [2026-11-22 note](docs/current-snapshots-2026-11-22.md) names the upstream commits the gate last ran against:
 
 ```sh
-./mvnw -o -B -ntp -Dmaven.repo.local="$V3_M2" clean verify dependency:build-classpath \
-  -DincludeScope=runtime -Dmdep.outputFile=target/runtime-classpath.txt
+./mvnw -o -B -ntp clean verify
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
 ```
+
+Past runs keep their own evidence. The frozen closure in its isolated Maven repository (`V3_M2`), installed from exact producer receipts, remains the evidence for them. Rebuild that closure only with its recorded command, `./mvnw -o -B -ntp -Dmaven.repo.local="$V3_M2" clean verify dependency:build-classpath -DincludeScope=runtime -Dmdep.outputFile=target/runtime-classpath.txt`.
+
+Results are written at Experiment runtime schema 5, and V3's rows stay Workflow rows. Schema 4 results and retained `invoked.json` files written before schema 5 still read with their original meaning.
 
 The invocation below is reference documentation, not permission to run. New measurements and quality calls require separate explicit authorization. Commit source before any authorized measurement. Use a new private directory outside this repository for every attempt, and freeze the packaged application and dependency JARs with their source receipts/hashes. A packaged invocation has this shape:
 

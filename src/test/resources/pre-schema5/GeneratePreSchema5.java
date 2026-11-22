@@ -13,7 +13,7 @@ import java.util.*;
  * Provenance only; not compiled by the build. Writes the pre-schema-5 fixtures in this directory
  * with Experiment runtime 91817ec (schema 4) on the classpath in place of the current runtime, and
  * V3's own CoverageEvidence writer. Run once from the V3 project root; every FileRef is relative
- * to that root. See README.md for the exact command and the resulting hashes.
+ * to that root. docs/current-snapshots-2026-11-22.md records the exact command and the resulting hashes.
  */
 public final class GeneratePreSchema5 {
     static final Path BASE = Path.of("src/test/resources/pre-schema5");

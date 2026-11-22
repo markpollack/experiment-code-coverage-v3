@@ -1,5 +1,13 @@
 # V3 roadmap
 
+## Catch-up onto current development snapshots
+
+Owner direction, 2026-11-22: bring V3 onto today's Client, Journal and Experiment snapshots,
+offline, with the full Java and Python gate green and an independent review before merge.
+The four upstream breaks and the gate are recorded in the
+[current snapshot note](current-snapshots-2026-11-22.md). No provider call, experiment repeat or
+change to results, datasets, figures or frozen closures is part of this work.
+
 ## Returned corrected Codex PetClinic native attempt
 
 The separately Owner-approved corrected packet ran once at tested source
