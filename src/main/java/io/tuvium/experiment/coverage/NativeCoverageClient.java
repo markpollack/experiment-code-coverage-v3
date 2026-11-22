@@ -1,6 +1,6 @@
 package io.tuvium.experiment.coverage;
 
-import io.github.markpollack.agents.claude.ClaudeClientProvider;
+import io.github.markpollack.agents.client.claude.ClaudeClientProvider;
 import io.github.markpollack.agents.client.*;
 import io.github.markpollack.agents.client.journal.JournalExecutionRecorder;
 import io.github.markpollack.claude.agent.sdk.hooks.HookCallback;
