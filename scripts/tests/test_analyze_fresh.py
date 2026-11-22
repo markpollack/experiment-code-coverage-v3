@@ -135,6 +135,44 @@ class MappingTest(unittest.TestCase):
             self.assertEqual('FAIL', domain['outcome'])
             self.assertFalse(domain['passed'])
 
+    def test_schema_5_workflow_row_maps_like_its_schema_4_form(self):
+        # Experiment runtime schema 5 (3d40303): the row names its execution and each attempt
+        # holds its Workflow coordinates in a one-entry list. V3 rows are Workflow rows.
+        with tempfile.TemporaryDirectory() as directory:
+            result, export, receipt, evidence, _ = self.selected_fixture(Path(directory))
+            source = Path(directory) / 'acquisition.json'
+            source.write_text(json.dumps({'complete': True, 'acquisition_uid': 'client-execution',
+                                          'run': {'run_uid': 'client-execution'}}))
+            ref = {'path': str(source), 'sha256': module.sha(source), 'subject': 'acquisition-manifest'}
+            data = json.loads(result.read_text()); row = data['items'][0]; invocation = row['invocations'][0]
+            invocation['acquisitions'] = [ref]
+            invocation['attempt'].update(workflowRunId='workflow-run', workflowInvocationId='logical')
+            accepted = json.loads(receipt.read_text()); accepted['journal_run_uid'] = 'client-execution'
+            accepted['verified_files'].append(ref); receipt.write_text(json.dumps(accepted))
+            result.write_text(json.dumps(data))
+            schema4 = module.mapping(result, export, receipt, evidence, 1)['inputs'][0]
+            data['recordingSchemaVersion'] = 5
+            row['execution'] = 'WORKFLOW'; row['executionState'] = row.pop('workflowState')
+            attempt = invocation['attempt']
+            attempt['execution'] = 'WORKFLOW'
+            attempt['workflow'] = [{'runId': attempt.pop('workflowRunId'), 'invocationId': attempt.pop('workflowInvocationId'),
+                                    'attemptId': attempt.pop('workflowAttemptId')}]
+            result.write_text(json.dumps(data))
+            schema5 = module.mapping(result, export, receipt, evidence, 1)['inputs'][0]
+            for key in ('execution_run_id', 'attempt_id', 'attempt_index', 'invocation_id', 'journal_run_uid'):
+                self.assertEqual(schema4[key], schema5[key], key)
+            self.assertEqual('workflow-run', schema5['execution_run_id'])
+            self.assertEqual('physical', schema5['attempt_id'])
+            self.assertEqual('SUCCEEDED', schema5['domain']['workflow_state'])
+            row['execution'] = 'DIRECT'; row['executionState'] = 'COMPLETED'
+            attempt['execution'] = 'DIRECT'; attempt['workflow'] = []
+            result.write_text(json.dumps(data))
+            with self.assertRaisesRegex(ValueError, 'Workflow rows only'):
+                module.mapping(result, export, receipt, evidence, 1)
+            data['recordingSchemaVersion'] = 6; result.write_text(json.dumps(data))
+            with self.assertRaisesRegex(ValueError, 'Expected current Experiment canonical result'):
+                module.mapping(result, export, receipt, evidence, 1)
+
     def test_native_run_identity_uses_independently_checked_acquisition(self):
         with tempfile.TemporaryDirectory() as directory:
             result, export, receipt, evidence, _ = self.selected_fixture(Path(directory))

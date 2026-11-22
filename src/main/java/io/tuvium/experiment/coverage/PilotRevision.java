@@ -1,12 +1,18 @@
 package io.tuvium.experiment.coverage;
 
 import io.github.markpollack.experiment.runtime.AgentRecords.*;
+import io.github.markpollack.experiment.runtime.AgentRecords;
 import io.github.markpollack.experiment.runtime.Evidence;
+import io.github.markpollack.experiment.runtime.FileSystemResultStore;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 
-/** Select repaired evidence for the same PetClinic attempt; callers save to a NEW shared store. */
+/**
+ * Select repaired evidence for the same PetClinic attempt; callers save to a NEW shared store.
+ * Parents are read with Experiment's store reader, so a schema 4 parent keeps its original
+ * meaning and version; the revision is written at the current schema.
+ */
 public final class PilotRevision {
     private PilotRevision() {}
 
@@ -19,7 +25,8 @@ public final class PilotRevision {
                 !original.experimentName().equals(assessment.experimentName()) ||
                 !prior.identity().equals(selected.identity()) ||
                 !prior.domain().equals(selected.domain()) ||
-                !prior.workflowState().equals(selected.workflowState()) ||
+                prior.execution()!=selected.execution() ||
+                !prior.executionState().equals(selected.executionState()) ||
                 !prior.workflowProof().equals(selected.workflowProof()) ||
                 !prior.workspaceState().equals(selected.workspaceState()) ||
                 !prior.invocations().equals(selected.invocations()))
@@ -34,8 +41,8 @@ public final class PilotRevision {
                 !repaired.qualifications().getFirst().state().equals("QUALIFIED"))
             throw new IllegalArgumentException("Repaired evidence changed immutable task facts");
         Evidence.verify(prior);Evidence.verify(selected);
-        Row row=new Row(prior.identity(),List.of(repaired),prior.workflowState(),prior.domain(),selected.verdicts(),
-                selected.judgeState(),selected.error(),selected.workspaceState(),prior.workflowProof());
+        Row row=new Row(prior.identity(),List.of(repaired),prior.execution(),prior.executionState(),prior.domain(),
+                selected.verdicts(),selected.judgeState(),selected.error(),selected.workspaceState(),prior.workflowProof());
         Evidence.verify(row);
         // Old stores and referenced derivatives remain explicit provenance, never overwritten.
         var refs=new LinkedHashSet<FileRef>(original.runtimeArtifacts());refs.addAll(assessment.runtimeArtifacts());
@@ -48,11 +55,11 @@ public final class PilotRevision {
             Evidence.verify(ref);
             Result expectedParent=ref.subject().equals("parent-experiment-result")?original:
                     ref.subject().equals("selected-assessment-result")?assessment:null;
-            if(expectedParent!=null && !CoverageEvidence.JSON.readValue(Path.of(ref.path()).toFile(),Result.class).equals(expectedParent))
+            if(expectedParent!=null && !FileSystemResultStore.read(Path.of(ref.path())).equals(expectedParent))
                 throw new IllegalArgumentException("Revision parent reference does not match selected result");
             refs.add(ref);
         }
-        return new Result(original.recordingSchemaVersion(),original.kind(),original.experimentId(),
+        return new Result(AgentRecords.CURRENT_SCHEMA_VERSION,original.kind(),original.experimentId(),
                 original.experimentName(),createdAtEpochMs,List.of(row),List.copyOf(refs));
     }
 }

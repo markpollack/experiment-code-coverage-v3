@@ -74,10 +74,37 @@ def selected_jury(row, result_path, evidence):
     return association, named, [final]
 
 
+SCHEMA_4_COORDINATES = {"runId": "workflowRunId", "invocationId": "workflowInvocationId", "attemptId": "workflowAttemptId"}
+
+
+def workflow_row_state(version, row):
+    """A V3 row's Workflow state. Schema 4 rows carry workflowState; schema 5 rows name their
+    execution, and V3's runs are Workflow rows (or never started), never direct rows."""
+    if version == 4:
+        if "execution" in row:
+            raise ValueError("Schema 4 row states a schema 5 execution")
+        return row["workflowState"]
+    if version != 5 or row.get("execution") not in ("WORKFLOW", "NOT_STARTED"):
+        raise ValueError("V3 records Workflow rows only")
+    return row["executionState"]
+
+
+def workflow_coordinate(version, attempt, name):
+    """One Workflow coordinate (runId, invocationId or attemptId) of a V3 attempt, schema 4 or 5."""
+    if version == 4:
+        if "execution" in attempt:
+            raise ValueError("Schema 4 attempt states a schema 5 execution")
+        return attempt[SCHEMA_4_COORDINATES[name]]
+    if version != 5 or attempt.get("execution") != "WORKFLOW" or len(attempt.get("workflow", [])) != 1:
+        raise ValueError("V3 records Workflow attempts only")
+    return attempt["workflow"][0][name]
+
+
 def mapping(result_path, export, reader_receipt, evidence, expected_tool_calls):
     """Diagnostic projection; only admit_live selects a live population for the CLI."""
     result = json.loads(result_path.read_text())
-    if result.get("recordingSchemaVersion") != 4 or result.get("kind") != "AGENT_CANONICAL":
+    version = result.get("recordingSchemaVersion")
+    if version not in (4, 5) or result.get("kind") != "AGENT_CANONICAL":
         raise ValueError("Expected current Experiment canonical result")
     if len(result["items"]) != 1:
         raise ValueError("The bounded V3 path expects one item")
@@ -156,7 +183,7 @@ def mapping(result_path, export, reader_receipt, evidence, expected_tool_calls):
                for m in row["domain"]["measurements"]}
     domain = {"passed": passed, "outcome": outcome, "cost_usd": None,
               "duration_ms": invocation["elapsedMs"], "line_coverage": metrics.get("lineCoverage"),
-              "artifact_refs": row["domain"]["artifacts"], "workflow_state": row["workflowState"],
+              "artifact_refs": row["domain"]["artifacts"], "workflow_state": workflow_row_state(version, row),
               "response_state": invocation["responseState"], "capture_state": invocation["captureState"],
               "reader_receipt": str(reader_receipt), "reader_receipt_sha256": sha(reader_receipt),
               "experiment_result": str(result_path), "experiment_result_sha256": sha(result_path)}
@@ -171,9 +198,10 @@ def mapping(result_path, export, reader_receipt, evidence, expected_tool_calls):
     return {"kind": "act/canonical-inputs", "version": "1", "inputs": [{
         "export_path": str(export), "export_sha256": sha(export),
         "journal_run_uid": journal_run_uid, "run_id": result["experimentId"],
-        "execution_run_id": attempt["workflowRunId"] if "journal_run_uid" in receipt else identity["runId"], "invocation_id": attempt["invocationId"],
+        "execution_run_id": workflow_coordinate(version, attempt, "runId") if "journal_run_uid" in receipt else identity["runId"],
+        "invocation_id": attempt["invocationId"],
         "item_id": identity["itemId"], "variant": identity["variant"],
-        "replicate_index": identity["replicateIndex"], "attempt_id": attempt["workflowAttemptId"],
+        "replicate_index": identity["replicateIndex"], "attempt_id": workflow_coordinate(version, attempt, "attemptId"),
         "attempt_index": attempt["attemptNumber"] - 1, "domain": domain, "judge_details": details,
         **({"expected_tool_calls": expected_tool_calls} if expected_tool_calls is not None else {})}]}
 

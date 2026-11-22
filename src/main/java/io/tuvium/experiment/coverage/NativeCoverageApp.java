@@ -117,7 +117,7 @@ public final class NativeCoverageApp {
             if (Files.exists(evidence.resolve("prepared.json")))
                 prepared=CoverageEvidence.JSON.readValue(evidence.resolve("prepared.json").toFile(),Prepared.class).item();
             if (Files.exists(evidence.resolve("invoked.json")))
-                invocations.add(CoverageEvidence.JSON.readValue(evidence.resolve("invoked.json").toFile(),Invoked.class).invocation());
+                invocations.add(readInvoked(evidence.resolve("invoked.json")).invocation());
         }
         Row row=WorkflowAdapter.assess(execution,prepared,invocations,domain,
                 (item,measured)->candidateWorkspace==null
@@ -210,6 +210,37 @@ public final class NativeCoverageApp {
                     evidence.resolve("journal/native-"+execution),events,budget,elapsed);
         }
     }
+    private static final Set<String> SCHEMA_4_ATTEMPT=Set.of("row","invocationId","workflowRunId","workflowInvocationId",
+            "workflowAttemptId","attemptNumber");
+
+    /**
+     * Reads a retained {@code invoked.json}. A file written before Experiment runtime schema 5
+     * holds the schema 4 attempt shape, which recorded Workflow attempts only, with their
+     * coordinates as three top-level fields. Experiment reads that shape for stored results but
+     * has no public reader for a retained invocation, so this reads the attempt through
+     * Experiment's public schema 4 Attempt constructor: it stays a Workflow attempt with the
+     * same coordinates, and nothing is added.
+     */
+    static Invoked readInvoked(Path file) throws java.io.IOException {
+        var tree=CoverageEvidence.JSON.readTree(file.toFile());
+        if(!(tree.path("invocation") instanceof com.fasterxml.jackson.databind.node.ObjectNode invocation)
+                || !(invocation.path("attempt") instanceof com.fasterxml.jackson.databind.node.ObjectNode attempt))
+            throw new java.io.IOException("Retained invocation without an attempt: "+file);
+        if(!attempt.has("execution")) {
+            var names=new HashSet<String>();attempt.fieldNames().forEachRemaining(names::add);
+            if(!names.equals(SCHEMA_4_ATTEMPT)) throw new java.io.IOException("Unrecognized retained attempt shape: "+names);
+            for(String key:List.of("invocationId","workflowRunId","workflowInvocationId","workflowAttemptId"))
+                if(!attempt.path(key).isTextual()) throw new java.io.IOException("Schema 4 attempt field is not text: "+key);
+            if(!attempt.path("attemptNumber").isInt()) throw new java.io.IOException("Schema 4 attempt number is not an integer");
+            var legacy=new Attempt(CoverageEvidence.JSON.treeToValue(attempt.path("row"),Identity.class),
+                    attempt.path("invocationId").textValue(),attempt.path("workflowRunId").textValue(),
+                    attempt.path("workflowInvocationId").textValue(),attempt.path("workflowAttemptId").textValue(),
+                    attempt.path("attemptNumber").intValue());
+            invocation.set("attempt",CoverageEvidence.JSON.valueToTree(legacy));
+        }
+        return CoverageEvidence.JSON.treeToValue(tree,Invoked.class);
+    }
+
     static Path selectPrepared(Path journal,String binding,String execution,String decision) throws Exception {
         List<Path> matches=new ArrayList<>();
         try(var paths=Files.walk(journal.resolve("prepared"),2)) {

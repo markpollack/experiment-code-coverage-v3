@@ -1,0 +1,24 @@
+{
+  "kind" : "agent-journal/acquired-execution",
+  "version" : "0.1",
+  "synthetic" : "V3 pre-schema-5 fixture; not a native capture",
+  "complete" : true,
+  "acquisition_uid" : "7d0f5a52-6b1e-4f43-9a4c-2f0b9c1d6e01",
+  "run" : {
+    "run_uid" : "7d0f5a52-6b1e-4f43-9a4c-2f0b9c1d6e01",
+    "launch_settings" : {
+      "artifact_provenance" : {
+        "experiment_invocation_id" : "7d0f5a52-6b1e-4f43-9a4c-2f0b9c1d6e01",
+        "experiment_run_id" : "pilot-schema4",
+        "item_id" : "spring-petclinic-partial",
+        "replicate_index" : "0",
+        "row_id" : "24:spring-petclinic-partial6:simple1:0",
+        "variant" : "simple",
+        "workflow_attempt_id" : "b4a6c8e0-2d4f-4a6c-8e0b-2d4f6a8c0e01",
+        "workflow_attempt_number" : "1",
+        "workflow_invocation_id" : "sha256:9f2c4e6a8b0d1f3e5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b9d1f",
+        "workflow_run_id" : "3c8e2a90-1f5d-4b7e-8c2a-5e6f7a8b9c01"
+      }
+    }
+  }
+}

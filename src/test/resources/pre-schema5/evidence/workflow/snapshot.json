@@ -1,0 +1,13 @@
+{
+  "synthetic" : "V3 pre-schema-5 fixture; not a Workflow run",
+  "runId" : "3c8e2a90-1f5d-4b7e-8c2a-5e6f7a8b9c01",
+  "status" : "SUCCEEDED",
+  "invocations" : [ {
+    "invocationId" : "sha256:9f2c4e6a8b0d1f3e5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b9d1f",
+    "attempts" : [ {
+      "attemptId" : "b4a6c8e0-2d4f-4a6c-8e0b-2d4f6a8c0e01",
+      "number" : 1,
+      "disposition" : "COMMITTED"
+    } ]
+  } ]
+}

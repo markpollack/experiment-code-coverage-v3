@@ -17,7 +17,8 @@ class CodexCoverageClientTest {
     @Test void packagedLocalChildPreservesOriginalDecisionAndAdmitsQualifiedArchive() throws Exception {
         var fixture=fixture();
         try(var client=CodexCoverageClient.openFixture(fixture.workspace(),fixture.evidence(),fixture.child().toString(),"success")) {
-            var attempt=new Attempt(Identity.of("codex-fixture","item","simple",0),"invocation","workflow","workflow-invocation","workflow-attempt",1);
+            // Started directly through Client, not by a Workflow step: a direct attempt (schema 5).
+            var attempt=Attempt.direct(Identity.of("codex-fixture","item","simple",0),"invocation",1);
             var started=new AsyncClientInvocationService(client).start(attempt,fixture.workspace(),"exact pinned prompt",Duration.ofSeconds(10));
             var response=started.execution().result();var decision=started.decision().orElseThrow();
             var observed=NativeAttemptCustody.returned(started,response);
@@ -46,7 +47,7 @@ class CodexCoverageClientTest {
         for(String mode:List.of("failed","wrong")) {
             var fixture=fixture();
             try(var client=CodexCoverageClient.openFixture(fixture.workspace(),fixture.evidence(),fixture.child().toString(),mode)) {
-                var attempt=new Attempt(Identity.of(mode,"item","simple",0),"invocation","workflow","workflow-invocation","workflow-attempt",1);
+                var attempt=Attempt.direct(Identity.of(mode,"item","simple",0),"invocation",1);
                 var started=new AsyncClientInvocationService(client).start(attempt,fixture.workspace(),"original prompt",Duration.ofSeconds(10));
                 var response=started.execution().result();var decision=started.decision().orElseThrow();
                 var termination=started.execution().awaitTermination(Duration.ofSeconds(10));await(started.execution());

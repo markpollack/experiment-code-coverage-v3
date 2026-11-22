@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from accept_native_coverage import Evidence, jury_verdict, require
 from codex_candidate_surface import inventory, validate
-from analyze_fresh import mapping, admit_live
+from analyze_fresh import mapping, admit_live, workflow_row_state
 
 def evaluate(root, manifest_path):
     root=Path(root);app=root/'application';e=Evidence();m=e.json(manifest_path)
@@ -19,7 +19,7 @@ def evaluate(root, manifest_path):
     name=base64.urlsafe_b64encode(m['runId'].encode()).decode().rstrip('=')
     result_path=app/'results'/name/'run.json';result=e.json(result_path);e.references(result)
     require(len(result['items'])==1,'Exactly one task required');row=result['items'][0]
-    require(row['workflowState']=='SUCCEEDED' and row['workspaceState']=='RETAINED','Workflow not accepted')
+    require(workflow_row_state(result['recordingSchemaVersion'],row)=='SUCCEEDED' and row['workspaceState']=='RETAINED','Workflow not accepted')
     require(len(row['invocations'])==1,'Exactly one original invocation required');inv=row['invocations'][0]
     require(inv['responseState']=='SUCCEEDED' and inv['captureState']=='COMPLETE','Original result/capture not accepted')
     original=e.json(app/'native-attempt.json');response=e.json(app/'observed-client-response.json')

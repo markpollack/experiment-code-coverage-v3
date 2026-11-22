@@ -29,7 +29,8 @@ class NativeAttemptCustodyTest {
         };
         // The 25 ms observation below must time out; leave time to retain evidence before releasing the fixture.
         try(var client=AgentClient.builder(provider).cleanupTimeout(Duration.ofSeconds(2)).build()) {
-            var attempt=new Attempt(Identity.of("run","item","simple",0),"invocation","workflow","step","physical",1);
+            // Started directly through Client, not by a Workflow step: a direct attempt (schema 5).
+            var attempt=Attempt.direct(Identity.of("run","item","simple",0),"invocation",1);
             var started=new AsyncClientInvocationService(client).start(attempt,root,"fixture",Duration.ofSeconds(5));
             try {
                 assertThat(entered.await(2,TimeUnit.SECONDS)).isTrue();

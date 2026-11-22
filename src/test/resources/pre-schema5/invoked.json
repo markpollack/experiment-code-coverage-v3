@@ -1,0 +1,78 @@
+{
+  "prepared" : {
+    "task" : {
+      "identity" : {
+        "runId" : "pilot-schema4",
+        "itemId" : "spring-petclinic-partial",
+        "variant" : "simple",
+        "replicateIndex" : 0,
+        "rowId" : "24:spring-petclinic-partial6:simple1:0"
+      },
+      "workspace" : "/synthetic/workspace",
+      "prompt" : "synthetic prompt",
+      "model" : "synthetic-model",
+      "evidenceRoot" : "/synthetic/evidence"
+    },
+    "item" : {
+      "identity" : {
+        "runId" : "pilot-schema4",
+        "itemId" : "spring-petclinic-partial",
+        "variant" : "simple",
+        "replicateIndex" : 0,
+        "rowId" : "24:spring-petclinic-partial6:simple1:0"
+      },
+      "workspace" : "/synthetic/workspace",
+      "baseline" : [ {
+        "name" : "lineCoverage",
+        "unit" : "percent",
+        "state" : "MEASURED",
+        "values" : [ 64.8649 ],
+        "source" : "synthetic fixture",
+        "scope" : "item"
+      } ],
+      "artifacts" : [ ]
+    },
+    "expandedPrompt" : "synthetic expanded prompt"
+  },
+  "invocation" : {
+    "attempt" : {
+      "row" : {
+        "runId" : "pilot-schema4",
+        "itemId" : "spring-petclinic-partial",
+        "variant" : "simple",
+        "replicateIndex" : 0,
+        "rowId" : "24:spring-petclinic-partial6:simple1:0"
+      },
+      "invocationId" : "7d0f5a52-6b1e-4f43-9a4c-2f0b9c1d6e01",
+      "workflowRunId" : "3c8e2a90-1f5d-4b7e-8c2a-5e6f7a8b9c01",
+      "workflowInvocationId" : "sha256:9f2c4e6a8b0d1f3e5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b9d1f",
+      "workflowAttemptId" : "b4a6c8e0-2d4f-4a6c-8e0b-2d4f6a8c0e01",
+      "attemptNumber" : 1
+    },
+    "responseState" : "SUCCEEDED",
+    "processState" : "EXITED",
+    "exitCodes" : [ 0 ],
+    "captureState" : "COMPLETE",
+    "acquisitions" : [ {
+      "path" : "src/test/resources/pre-schema5/evidence/sources/acquisition.json",
+      "sha256" : "de76694cbe81ccd68a0334e8f15ab85a69574f64d4cc9158b750842190b222e9",
+      "subject" : "acquisition-manifest"
+    } ],
+    "canonical" : [ ],
+    "assemblyState" : "REFUSED",
+    "providerSessions" : [ "synthetic-session" ],
+    "usage" : [ {
+      "name" : "cost",
+      "unit" : "USD",
+      "state" : "UNKNOWN",
+      "values" : [ ],
+      "source" : "synthetic fixture",
+      "scope" : "7d0f5a52-6b1e-4f43-9a4c-2f0b9c1d6e01"
+    } ],
+    "responseText" : "synthetic response",
+    "error" : "Original assembly refused (synthetic fixture)",
+    "providerBudgetMs" : 900000,
+    "elapsedMs" : 1000,
+    "qualifications" : [ ]
+  }
+}

@@ -9,7 +9,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-from analyze_fresh import mapping, selected_jury, admit_live
+from analyze_fresh import mapping, selected_jury, admit_live, workflow_row_state
 
 
 class GateError(Exception):
@@ -270,7 +270,7 @@ def evaluate(root, manifest_path, snapshot=None):
         evidence.references(saved)
         row = saved["items"][0]
         state.update(resultPath=path, row=row)
-        require(row["workflowState"] == "SUCCEEDED" and len(row["invocations"]) == 1,
+        require(workflow_row_state(saved["recordingSchemaVersion"], row) == "SUCCEEDED" and len(row["invocations"]) == 1,
                 "Workflow/Invocation is not accepted; original failed workflow remains failed", "EVIDENCE_INCOMPLETE")
         invocation = row["invocations"][0]
         require(invocation["attempt"] == state["custody"]["attempt"], "Original subject Attempt changed")
